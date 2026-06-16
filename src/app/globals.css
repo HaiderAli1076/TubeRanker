@@ -1,0 +1,88 @@
+@import "../styles/tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  color: var(--text-primary);
+  background: var(--background);
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@keyframes meshDrift {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.95);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+@keyframes spinnerRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-orb-1 {
+  animation: meshDrift 20s ease-in-out infinite alternate;
+}
+
+.animate-orb-2 {
+  animation: meshDrift 24s ease-in-out infinite alternate-reverse;
+}
+
+.animate-spinner {
+  animation: spinnerRotate 1s linear infinite;
+}
+
+/* Onboarding transitions */
+.step-enter {
+  opacity: 0;
+  transform: translateY(8px);
+  animation: stepIn 250ms ease-out forwards;
+}
+
+.step-exit {
+  opacity: 1;
+  transform: translateY(0px);
+  animation: stepOut 200ms ease-in forwards;
+}
+
+@keyframes stepIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0px);
+  }
+}
+
+@keyframes stepOut {
+  from {
+    opacity: 1;
+    transform: translateY(0px);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+

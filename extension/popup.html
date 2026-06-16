@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>TubeRank Creator Tool</title>
+  <style>
+    body {
+      width: 380px;
+      margin: 0;
+      padding: 16px;
+      background: #0f172a;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      box-sizing: border-box;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+      background: linear-gradient(to right, #a78bfa, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .tagline {
+      font-size: 10px;
+      color: #94a3b8;
+    }
+    
+    /* Session Error Banner */
+    #session-error-banner {
+      display: none;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12px;
+      line-height: 1.4;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    #session-error-banner a {
+      color: #60a5fa;
+      font-weight: 700;
+      text-decoration: underline;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 8px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: #e2e8f0;
+      background: rgba(255,255,255,0.03);
+    }
+    .tab-btn.active {
+      color: #8b5cf6;
+      background: rgba(139, 92, 246, 0.1);
+    }
+
+    /* Tab Panels */
+    .tab-panel {
+      display: none;
+    }
+    .tab-panel.active {
+      display: block;
+    }
+
+    /* Form Elements */
+    .form-group {
+      margin-bottom: 12px;
+    }
+    label {
+      display: block;
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    input {
+      width: 100%;
+      background: #020617;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: #f8fafc;
+      font-size: 13px;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+    }
+    input:focus {
+      outline: none;
+      border-color: #8b5cf6;
+    }
+    button.primary-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      padding: 10px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+      transition: all 0.2s;
+    }
+    button.primary-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3);
+    }
+    button.primary-btn:active {
+      transform: translateY(0);
+    }
+    button.primary-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Output Results Styling */
+    .result-container {
+      margin-top: 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .keyword-vol {
+      font-size: 20px;
+      font-weight: 800;
+      color: #a78bfa;
+      margin-bottom: 12px;
+    }
+    .keyword-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .keyword-list li {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      padding: 6px 0;
+      font-size: 12px;
+    }
+    .keyword-list li:last-child {
+      border-bottom: none;
+    }
+    .keyword-list span.val {
+      color: #a78bfa;
+      font-weight: 700;
+    }
+    
+    .title-item {
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding: 8px 0;
+    }
+    .title-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .title-item:first-child {
+      padding-top: 0;
+    }
+    .title-text {
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 4px;
+    }
+    .title-rationale {
+      font-size: 11px;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+
+    .tuberank-pulse-skeleton {
+      animation: pulse 1.5s infinite ease-in-out;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+    @keyframes pulse {
+      0% { opacity: 0.6; }
+      50% { opacity: 0.3; }
+      100% { opacity: 0.6; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>TubeRank Creator Panel</h1>
+      <span class="tagline">AI YouTube Assistant</span>
+    </div>
+  </header>
+
+  <!-- Session Error Banner -->
+  <div id="session-error-banner"></div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button id="tab-keyword" class="tab-btn active">Keywords</button>
+    <button id="tab-title" class="tab-btn">Title Generator</button>
+  </div>
+
+  <!-- Keyword Panel -->
+  <div id="panel-keyword" class="tab-panel active">
+    <form id="keyword-form">
+      <div class="form-group">
+        <label for="keyword-input">Keyword / Query</label>
+        <input type="text" id="keyword-input" placeholder="e.g. build a saas..." required>
+      </div>
+      <button type="submit" id="keyword-submit-btn" class="primary-btn">Analyze Keyword</button>
+    </form>
+    <div id="keyword-result" class="result-container" style="display: none;"></div>
+  </div>
+
+  <!-- Title Generator Panel -->
+  <div id="panel-title" class="tab-panel">
+    <form id="title-form">
+      <div class="form-group">
+        <label for="title-topic-input">Video Topic</label>
+        <input type="text" id="title-topic-input" placeholder="e.g. coding saas in 24 hours" required>
+      </div>
+      <div class="form-group">
+        <label for="title-keywords-input">Target Keywords (Optional)</label>
+        <input type="text" id="title-keywords-input" placeholder="e.g. nextjs, indie hacker">
+      </div>
+      <button type="submit" id="title-submit-btn" class="primary-btn">Generate Titles</button>
+    </form>
+    <div id="title-result" class="result-container" style="display: none;"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
