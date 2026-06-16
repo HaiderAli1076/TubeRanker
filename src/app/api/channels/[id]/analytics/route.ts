@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { apiHandler } from "@/lib/apiHandler";
 import { deductCredits } from "@/lib/credits";
-import { getChannelStats, getChannelVideos, CACHE_KEYS } from "@/lib/youtube";
+import { getChannelStats, getChannelVideos } from "@/lib/youtube";
 import { prisma } from "@/lib/prisma";
 import { redis } from "@/lib/redis";
 import { AuthError, ValidationError, NotFoundError } from "@/lib/errors";
@@ -113,9 +113,10 @@ export const GET = apiHandler<{ params: { id: string } }>(async (req, context) =
       }>;
 
       // Batch create video uploads in the database
+      const channelDbId = dbChannel.id;
       const videosData = items.map((item) => ({
         youtubeId: item.id.videoId,
-        channelId: dbChannel!.id,
+        channelId: channelDbId,
         title: item.snippet?.title || "",
         description: item.snippet?.description || "",
         viewCount: BigInt(Math.floor(Math.random() * 50000) + 100), // mocked starting views for search results

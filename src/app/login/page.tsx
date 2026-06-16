@@ -9,7 +9,6 @@ export default function LoginPage() {
   const [currentState, setCurrentState] = useState<ButtonState>("default");
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-  const isDev = process.env.NODE_ENV === "development";
 
   useEffect(() => {
     if (showToast) {

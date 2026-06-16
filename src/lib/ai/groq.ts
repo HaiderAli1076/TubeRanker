@@ -7,7 +7,7 @@ const groq = new Groq({
 });
 
 export async function generateAIContent(prompt: string, systemInstruction?: string): Promise<string> {
-  const messages: any[] = [];
+  const messages: Array<{ role: "system" | "user"; content: string }> = [];
   
   if (systemInstruction) {
     messages.push({ role: "system", content: systemInstruction });
