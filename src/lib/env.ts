@@ -98,6 +98,14 @@ function validateEnv(): Env {
     } as any;
   }
 
+  const skipValidation =
+    process.env.SKIP_ENV_VALIDATION === "true" ||
+    process.env.NODE_ENV === "production";
+
+  if (skipValidation) {
+    return process.env as any;
+  }
+
   const parsed = envSchema.safeParse(process.env);
 
   if (!parsed.success) {
