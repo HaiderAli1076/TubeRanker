@@ -10,6 +10,27 @@ interface LogPayload {
 
 const isProduction = process.env.NODE_ENV === "production";
 
+function safeSerialize(obj: unknown): string {
+  const seen = new WeakSet();
+  return JSON.stringify(obj, (key, value) => {
+    if (typeof value === "object" && value !== null) {
+      if (seen.has(value)) {
+        return "[Circular]";
+      }
+      seen.add(value);
+      if (value instanceof Error) {
+        return {
+          name: value.name,
+          message: value.message,
+          stack: value.stack,
+          ...value,
+        };
+      }
+    }
+    return value;
+  });
+}
+
 function log(level: LogLevel, message: string, meta?: Record<string, unknown>) {
   const payload: LogPayload = {
     timestamp: new Date().toISOString(),
@@ -19,7 +40,7 @@ function log(level: LogLevel, message: string, meta?: Record<string, unknown>) {
   };
 
   if (isProduction) {
-    const serialized = JSON.stringify(payload);
+    const serialized = safeSerialize(payload);
     if (level === "error" || level === "warn") {
       console.error(serialized);
     } else {
@@ -35,7 +56,7 @@ function log(level: LogLevel, message: string, meta?: Record<string, unknown>) {
     };
 
     const color = colors[level] || colorReset;
-    const formattedMeta = meta && Object.keys(meta).length > 0 ? ` ${JSON.stringify(meta)}` : "";
+    const formattedMeta = meta && Object.keys(meta).length > 0 ? ` ${safeSerialize(meta)}` : "";
     const logLine = `${payload.timestamp} [${color}${level.toUpperCase()}${colorReset}]: ${message}${formattedMeta}`;
 
     if (level === "error" || level === "warn") {
