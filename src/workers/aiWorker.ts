@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import "dotenv/config";
+import http from "http";
 import { fileURLToPath } from "url";
 import { Worker } from "bullmq";
 import type { Job } from "bullmq";
@@ -252,4 +253,14 @@ const isMain = typeof process !== "undefined" && process.argv[1] && (
 
 if (isMain) {
   startAIWorkers();
+
+  // Dummy HTTP server to satisfy Render's port-binding requirements for Free Web Services
+  const port = process.env.PORT || 10000;
+  const server = http.createServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("AI Worker is running and listening to Redis queues.");
+  });
+  server.listen(port, () => {
+    logger.info(`Dummy HTTP server listening on port ${port} for Render port binding check.`);
+  });
 }
