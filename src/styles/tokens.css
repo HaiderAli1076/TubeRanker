@@ -1,29 +1,28 @@
-/**
- * TubeRank design tokens — dark-first product theme.
- *
- * Extension palette (extension/popup.html, extension/content.js) intentionally
- * uses the same hex values inline (#0f172a background, #8B5CF6→#6366F1 gradient)
- * for Chrome MV3 isolation; kept in sync with these tokens manually.
- */
-
 :root {
-  --background: #020617;
-  --card: #0f172a;
-  --text-primary: #f1f5f9;
-  --text-muted: #94a3b8;
-  --primary: #6366f1;
-  --error: #ef4444;
-  --border-color: #1e293b;
-  --border: 1px solid var(--border-color);
+  --background: #06060A;
+  --card: #11111A;
+  --surface: #12121A;
+  --surface-low: #181824;
+  --surface-container: #1E1E2F;
+  --surface-high: #25253B;
+  --primary: #8B5CF6;
+  --primary-light: #C084FC;
+  --on-primary: #FFFFFF;
+  --secondary: #10B981;
+  --accent: #F43F5E;
+  --success: #10B981;
+  --on-surface: #F8FAFC;
+  --on-surface-variant: #94A3B8;
+  --text-primary: #F8FAFC;
+  --text-muted: #94A3B8;
+  --outline: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.08);
+  --error: #EF4444;
+  --radius-card: 16px;
+  --radius-button: 9999px;
+  --radius-input: 12px;
+  --radius-modal: 20px;
+  --radius-badge: 9999px;
+  --spacing-unit: 8px;
 }
 
-[data-theme="light"] {
-  --background: #f8fafc;
-  --card: #ffffff;
-  --text-primary: #0f172a;
-  --text-muted: #64748b;
-  --primary: #6366f1;
-  --error: #dc2626;
-  --border-color: #e2e8f0;
-  --border: 1px solid var(--border-color);
-}

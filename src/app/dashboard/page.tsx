@@ -667,17 +667,20 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background text-text-primary overflow-hidden font-sans">
-      
+    <div className="flex min-h-screen bg-[#06060a] text-text-primary overflow-hidden font-sans relative">
+      {/* Background Ambient Glow Orbs */}
+      <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-primary/10 blur-[150px] pointer-events-none animate-orb-1 z-0" />
+      <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-accent/5 blur-[150px] pointer-events-none animate-orb-2 z-0" />
+
       {/* DESKTOP SIDEBAR */}
       <aside
-        className={`hidden lg:flex flex-col bg-card border-r border-white/5 h-screen sticky top-0 transition-all duration-300 z-30 shrink-0 ${
+        className={`hidden lg:flex flex-col glass-panel border-r border-white/10 h-screen sticky top-0 transition-all duration-300 z-30 shrink-0 ${
           isSidebarCollapsed ? "w-20" : "w-64"
         }`}
       >
-        <div className="flex items-center gap-3 p-6 border-b border-white/5 h-16 shrink-0">
+        <div className="flex items-center gap-3 p-6 border-b border-white/5 h-16 shrink-0 z-10">
           <svg
-            className="h-6 w-6 text-primary shrink-0"
+            className="h-6 w-6 text-primary shrink-0 animate-pulse"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -693,58 +696,70 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
-          {[
-            {
-              id: "analytics",
-              name: "YouTube Analytics",
-              icon: (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              ),
-            },
-            {
-              id: "ai-suite",
-              name: "AI Creators Suite",
-              icon: (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                </svg>
-              ),
-            },
-            {
-              id: "scorecard",
-              name: "Video Scorecard",
-              icon: (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              ),
-            },
-          ].map((item) => {
-            const isActive = currentView === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setCurrentView(item.id as any)}
-                className={`flex items-center gap-4 w-full p-3 rounded-button transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-card ${
-                  isActive
-                    ? "bg-primary/20 text-text-primary border-l-4 border-primary font-semibold"
-                    : "text-text-muted hover:bg-white/5 hover:text-text-primary"
-                }`}
-                title={item.name}
-              >
-                <span className={isActive ? "text-primary" : "text-text-muted"}>
-                  {item.icon}
-                </span>
-                {!isSidebarCollapsed && <span className="text-sm truncate">{item.name}</span>}
-              </button>
-            );
-          })}
+        <nav className="flex-1 p-4 overflow-y-auto relative z-10">
+          <div className="relative flex flex-col gap-2">
+            {/* Sliding Active Indicator (Fluid Flow Backplate) */}
+            <div
+              className="absolute left-0 right-0 h-[48px] bg-primary/10 border-l-[3px] border-primary rounded-r-[8px] transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] pointer-events-none z-0"
+              style={{
+                transform: `translateY(${
+                  currentView === "analytics" ? 0 : currentView === "ai-suite" ? 56 : 112
+                }px)`,
+                height: "48px",
+              }}
+            />
+            {[
+              {
+                id: "analytics",
+                name: "YouTube Analytics",
+                icon: (
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                ),
+              },
+              {
+                id: "ai-suite",
+                name: "AI Creators Suite",
+                icon: (
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                  </svg>
+                ),
+              },
+              {
+                id: "scorecard",
+                name: "Video Scorecard",
+                icon: (
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                ),
+              },
+            ].map((item) => {
+              const isActive = currentView === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setCurrentView(item.id as any)}
+                  className={`flex items-center gap-4 w-full h-[48px] px-3 rounded-button transition-all duration-300 relative z-10 focus:outline-none focus:ring-1 focus:ring-primary/50 ${
+                    isActive
+                      ? "text-text-primary font-semibold"
+                      : "text-text-muted hover:text-text-primary hover:bg-white/5"
+                  }`}
+                  title={item.name}
+                >
+                  <span className={`transition-all duration-300 ${isActive ? "text-primary scale-110" : "text-text-muted"}`}>
+                    {item.icon}
+                  </span>
+                  {!isSidebarCollapsed && <span className="text-sm truncate">{item.name}</span>}
+                </button>
+              );
+            })}
+          </div>
         </nav>
 
-        <div className="p-4 border-t border-white/5 shrink-0">
+        <div className="p-4 border-t border-white/5 shrink-0 z-10">
           <button
             onClick={() => setIsSidebarCollapsed((prev) => !prev)}
             className="flex items-center justify-center w-full p-2 hover:bg-white/5 text-text-muted hover:text-text-primary rounded-button transition-colors focus:outline-none focus:ring-1 focus:ring-primary"
@@ -845,8 +860,7 @@ export default function DashboardPage() {
                 
                 {/* Keyword Research Panel */}
                 <section
-                  className="bg-card rounded-card p-6 shadow-xl"
-                  style={{ border: "var(--border)" }}
+                  className="glass-panel glass-panel-hover rounded-card p-6 shadow-xl"
                 >
                   <h2 className="text-lg font-bold mb-4 text-primary tracking-tight">Keyword Research</h2>
                   <form onSubmit={handleKeywordSearch} className="flex flex-col gap-2 mb-6">
@@ -857,11 +871,11 @@ export default function DashboardPage() {
                         onChange={(e) => setKeywordInput(e.target.value)}
                         maxLength={60}
                         placeholder="Search keyword suggestion..."
-                        className="flex-1 bg-white/5 border border-white/10 focus:border-primary rounded-button px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-card transition-all"
+                        className="flex-1 glass-input rounded-button px-4 py-2.5 text-sm placeholder-text-muted transition-all duration-200"
                       />
                       <button
                         type="submit"
-                        className="bg-primary hover:bg-primary/95 text-white rounded-button px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-0.5"
+                        className="glass-button-primary text-white rounded-button px-5 py-2.5 text-sm font-semibold"
                       >
                         Search
                       </button>
@@ -958,8 +972,7 @@ export default function DashboardPage() {
 
                 {/* Competitors Tracker Card */}
                 <section
-                  className="bg-card rounded-card p-6 shadow-xl"
-                  style={{ border: "var(--border)" }}
+                  className="glass-panel glass-panel-hover rounded-card p-6 shadow-xl"
                 >
                   <h2 className="text-lg font-bold mb-4 text-accent tracking-tight">Competitors Tracker</h2>
                   <form onSubmit={handleAddCompetitor} className="flex flex-col gap-2 mb-6">
@@ -970,12 +983,12 @@ export default function DashboardPage() {
                         onChange={(e) => setNewCompetitorId(e.target.value)}
                         maxLength={40}
                         placeholder="Enter YouTube Channel ID..."
-                        className="flex-1 bg-white/5 border border-white/10 focus:border-accent rounded-button px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-card transition-all"
+                        className="flex-1 glass-input rounded-button px-4 py-2.5 text-sm placeholder-text-muted transition-all duration-200"
                       />
                       <button
                         type="submit"
                         disabled={addCompMutation.isPending}
-                        className="bg-accent hover:bg-accent/95 text-white rounded-button px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-0.5 disabled:opacity-50"
+                        className="bg-gradient-to-r from-accent to-rose-600 shadow-[0_4px_14px_rgba(244,63,94,0.35)] hover:brightness-110 active:scale-95 text-white rounded-button px-5 py-2.5 text-sm font-semibold transition-all duration-200 disabled:opacity-50"
                       >
                         Track
                       </button>
@@ -1024,8 +1037,7 @@ export default function DashboardPage() {
               <div className="lg:col-span-2 space-y-8">
                 
                 <section
-                  className="bg-card rounded-card p-6 shadow-xl"
-                  style={{ border: "var(--border)" }}
+                  className="glass-panel rounded-card p-6 shadow-xl"
                 >
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                     <h2 className="text-lg font-bold text-primary tracking-tight">Channel Statistics & Performance</h2>
@@ -1037,11 +1049,11 @@ export default function DashboardPage() {
                           onChange={(e) => setChannelInput(e.target.value)}
                           maxLength={40}
                           placeholder="YouTube Channel ID..."
-                          className="bg-white/5 border border-white/10 focus:border-primary rounded-button px-3 py-1.5 text-xs text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-card w-full md:w-56 transition-all"
+                          className="glass-input rounded-button px-4 py-2 text-xs placeholder-text-muted w-full md:w-56 transition-all duration-200"
                         />
                         <button
                           type="submit"
-                          className="bg-primary hover:bg-primary/95 text-white rounded-button px-3 py-1.5 text-xs font-semibold transition-all hover:-translate-y-0.5 shrink-0"
+                          className="glass-button-primary text-white rounded-button px-4 py-2 text-xs font-semibold shrink-0"
                         >
                           Analyze
                         </button>
@@ -1087,19 +1099,19 @@ export default function DashboardPage() {
 
                       {/* Info counts */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-white/5 border border-white/10 rounded-card p-4 text-center">
+                        <div className="glass-panel rounded-card p-5 text-center shadow-lg hover:scale-[1.03] hover:border-primary/30 transition-all duration-300">
                           <div className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Subscribers</div>
                           <div className="text-2xl font-black text-primary mt-1">
                             {parseInt(channelData.stats.subscriberCount, 10).toLocaleString()}
                           </div>
                         </div>
-                        <div className="bg-white/5 border border-white/10 rounded-card p-4 text-center">
+                        <div className="glass-panel rounded-card p-5 text-center shadow-lg hover:scale-[1.03] hover:border-accent/30 transition-all duration-300">
                           <div className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Total Views</div>
                           <div className="text-2xl font-black text-accent mt-1">
                             {parseInt(channelData.stats.viewCount, 10).toLocaleString()}
                           </div>
                         </div>
-                        <div className="bg-white/5 border border-white/10 rounded-card p-4 text-center">
+                        <div className="glass-panel rounded-card p-5 text-center shadow-lg hover:scale-[1.03] hover:border-white/20 transition-all duration-300">
                           <div className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Total Uploads</div>
                           <div className="text-2xl font-black text-text-primary mt-1">
                             {parseInt(channelData.stats.videoCount, 10).toLocaleString()}
@@ -1108,7 +1120,7 @@ export default function DashboardPage() {
                       </div>
 
                       {/* Recharts Line Chart */}
-                      <div className="bg-white/5 border border-white/10 rounded-card p-4">
+                      <div className="glass-panel rounded-card p-6 shadow-xl">
                         <h4 className="text-xs font-bold text-text-muted mb-4 uppercase tracking-wider">
                           Recent Videos performance
                         </h4>
@@ -1193,42 +1205,43 @@ export default function DashboardPage() {
           {/* ================= VIEW 2: AI CREATORS SUITE ================= */}
           {currentView === "ai-suite" && (
             <div className="space-y-6">
-              
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 {[
-                  { id: "title-generator", name: "Title Gen", cost: 2, color: "text-primary border-primary/20 bg-primary/5" },
-                  { id: "description-writer", name: "Desc Writer", cost: 3, color: "text-accent border-accent/20 bg-accent/5" },
-                  { id: "thumbnail-concepts", name: "Thumbnail", cost: 2, color: "text-amber-400 border-amber-400/20 bg-amber-400/5" },
-                  { id: "content-outline", name: "Outline", cost: 5, color: "text-purple-400 border-purple-400/20 bg-purple-400/5" },
-                  { id: "seo-audit", name: "SEO Audit", cost: 3, color: "text-pink-400 border-pink-400/20 bg-pink-400/5" },
-                ].map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => {
-                      setSelectedTool(t.id as any);
-                      setAiStatus("idle");
-                      setAiResult(null);
-                      setAiErrorMsg("");
-                      setValidationErrors({});
-                    }}
-                    className={`border rounded-card p-3 text-center transition-all focus:outline-none focus:ring-1 focus:ring-primary ${
-                      selectedTool === t.id
-                        ? "bg-card border-white/20 shadow-lg ring-1 ring-white/10 scale-[1.02]"
-                        : "bg-white/5 border-white/5 text-text-muted hover:text-text-primary"
-                    }`}
-                  >
-                    <div className="font-bold text-xs uppercase tracking-wider">{t.name}</div>
-                    <div className="text-[10px] text-text-muted mt-1">{t.cost} Credits</div>
-                  </button>
-                ))}
+                  { id: "title-generator", name: "Title Gen", cost: 2, activeClass: "border-primary/40 bg-primary/10 shadow-[0_0_15px_rgba(139,92,246,0.15)] text-primary ring-1 ring-primary/20", hoverClass: "hover:border-primary/30 hover:bg-primary/5 text-text-muted hover:text-text-primary" },
+                  { id: "description-writer", name: "Desc Writer", cost: 3, activeClass: "border-accent/40 bg-accent/10 shadow-[0_0_15px_rgba(244,63,94,0.15)] text-accent ring-1 ring-accent/20", hoverClass: "hover:border-accent/30 hover:bg-accent/5 text-text-muted hover:text-text-primary" },
+                  { id: "thumbnail-concepts", name: "Thumbnail", cost: 2, activeClass: "border-amber-500/40 bg-amber-500/10 shadow-[0_0_15px_rgba(245,158,11,0.15)] text-amber-400 ring-1 ring-amber-500/20", hoverClass: "hover:border-amber-500/30 hover:bg-amber-500/5 text-text-muted hover:text-text-primary" },
+                  { id: "content-outline", name: "Outline", cost: 5, activeClass: "border-fuchsia-500/40 bg-fuchsia-500/10 shadow-[0_0_15px_rgba(217,70,239,0.15)] text-fuchsia-400 ring-1 ring-fuchsia-500/20", hoverClass: "hover:border-fuchsia-500/30 hover:bg-fuchsia-500/5 text-text-muted hover:text-text-primary" },
+                  { id: "seo-audit", name: "SEO Audit", cost: 3, activeClass: "border-pink-500/40 bg-pink-500/10 shadow-[0_0_15px_rgba(236,72,153,0.15)] text-pink-400 ring-1 ring-pink-500/20", hoverClass: "hover:border-pink-500/30 hover:bg-pink-500/5 text-text-muted hover:text-text-primary" },
+                ].map((t) => {
+                  const isActive = selectedTool === t.id;
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => {
+                        setSelectedTool(t.id as any);
+                        setAiStatus("idle");
+                        setAiResult(null);
+                        setAiErrorMsg("");
+                        setValidationErrors({});
+                      }}
+                      className={`border rounded-card p-3.5 text-center transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] active:scale-95 focus:outline-none ${
+                        isActive
+                          ? `${t.activeClass} scale-[1.03]`
+                          : `bg-white/5 border-white/5 ${t.hoverClass}`
+                      }`}
+                    >
+                      <div className="font-bold text-xs uppercase tracking-wider">{t.name}</div>
+                      <div className="text-[10px] opacity-80 mt-1">{t.cost} Credits</div>
+                    </button>
+                  );
+                })}
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
                 {/* Form Settings */}
                 <div
-                  className="lg:col-span-1 bg-card rounded-card p-6 shadow-xl h-fit"
-                  style={{ border: "var(--border)" }}
+                  className="lg:col-span-1 glass-panel rounded-card p-6 shadow-2xl h-fit"
                 >
                   <h3 className="text-base font-bold mb-4 capitalize text-primary border-b border-white/5 pb-2.5">
                     {selectedTool.replace("-", " ")} Settings
@@ -1236,7 +1249,7 @@ export default function DashboardPage() {
 
                   <form onSubmit={handleAISubmit} className="space-y-4">
                     {validationErrors.aiSuite && (
-                      <div className="bg-error/10 border border-error/20 text-error text-xs font-semibold rounded-button p-3">
+                      <div className="bg-error/10 border border-error/20 text-error text-xs font-semibold rounded-button p-3 animate-shake">
                         {validationErrors.aiSuite}
                       </div>
                     )}
@@ -1252,7 +1265,7 @@ export default function DashboardPage() {
                             onChange={(e) => setAiTopic(e.target.value)}
                             maxLength={100}
                             placeholder="e.g. Building a SaaS in 24 hours"
-                            className="w-full bg-white/5 border border-white/10 focus:border-primary rounded-button px-3 py-2 text-sm text-text-primary focus:outline-none transition-all"
+                            className="w-full glass-input rounded-button px-4 py-2.5 text-sm transition-all duration-200"
                           />
                         </div>
                         <div>
@@ -1263,7 +1276,7 @@ export default function DashboardPage() {
                             onChange={(e) => setAiKeywords(e.target.value)}
                             maxLength={100}
                             placeholder="e.g. saas, nextjs, nextauth"
-                            className="w-full bg-white/5 border border-white/10 focus:border-primary rounded-button px-3 py-2 text-sm text-text-primary focus:outline-none transition-all"
+                            className="w-full glass-input rounded-button px-4 py-2.5 text-sm transition-all duration-200"
                           />
                         </div>
                       </>
@@ -1280,7 +1293,7 @@ export default function DashboardPage() {
                             onChange={(e) => setAiTitle(e.target.value)}
                             maxLength={100}
                             placeholder="e.g. How I Built a SaaS in 24 Hours"
-                            className="w-full bg-white/5 border border-white/10 focus:border-primary rounded-button px-3 py-2 text-sm text-text-primary focus:outline-none transition-all"
+                            className="w-full glass-input rounded-button px-4 py-2.5 text-sm transition-all duration-200"
                           />
                         </div>
                         <div>
@@ -1292,7 +1305,7 @@ export default function DashboardPage() {
                             onChange={(e) => setAiTopic(e.target.value)}
                             maxLength={100}
                             placeholder="e.g. Planning database, configuring stripe hooks, deploying to vercel..."
-                            className="w-full bg-white/5 border border-white/10 focus:border-primary rounded-button px-3 py-2 text-sm text-text-primary focus:outline-none transition-all"
+                            className="w-full glass-input rounded-button px-4 py-2.5 text-sm transition-all duration-200"
                           />
                         </div>
                       </>
@@ -1309,7 +1322,7 @@ export default function DashboardPage() {
                             onChange={(e) => setAiTitle(e.target.value)}
                             maxLength={100}
                             placeholder="e.g. 10 YouTube Hacks To Grow Fast"
-                            className="w-full bg-white/5 border border-white/10 focus:border-primary rounded-button px-3 py-2 text-sm text-text-primary focus:outline-none transition-all"
+                            className="w-full glass-input rounded-button px-4 py-2.5 text-sm transition-all duration-200"
                           />
                         </div>
                         <div>
@@ -1321,7 +1334,7 @@ export default function DashboardPage() {
                             onChange={(e) => setAiDescription(e.target.value)}
                             maxLength={500}
                             placeholder="e.g. The video goes over algorithm secrets and click rate hooks..."
-                            className="w-full bg-white/5 border border-white/10 focus:border-primary rounded-button px-3 py-2 text-sm text-text-primary focus:outline-none transition-all"
+                            className="w-full glass-input rounded-button px-4 py-2.5 text-sm transition-all duration-200"
                           />
                         </div>
                       </>
@@ -1338,7 +1351,7 @@ export default function DashboardPage() {
                             onChange={(e) => setAiTopic(e.target.value)}
                             maxLength={100}
                             placeholder="e.g. Introduction to TypeScript Generics"
-                            className="w-full bg-white/5 border border-white/10 focus:border-primary rounded-button px-3 py-2 text-sm text-text-primary focus:outline-none transition-all"
+                            className="w-full glass-input rounded-button px-4 py-2.5 text-sm transition-all duration-200"
                           />
                         </div>
                         <div>
@@ -1349,7 +1362,7 @@ export default function DashboardPage() {
                             onChange={(e) => setAiDuration(e.target.value)}
                             maxLength={30}
                             placeholder="e.g. 10 minutes"
-                            className="w-full bg-white/5 border border-white/10 focus:border-primary rounded-button px-3 py-2 text-sm text-text-primary focus:outline-none transition-all"
+                            className="w-full glass-input rounded-button px-4 py-2.5 text-sm transition-all duration-200"
                           />
                         </div>
                       </>
@@ -1366,7 +1379,7 @@ export default function DashboardPage() {
                             onChange={(e) => setAiTitle(e.target.value)}
                             maxLength={100}
                             placeholder="e.g. Learn NextJS in 10 minutes"
-                            className="w-full bg-white/5 border border-white/10 focus:border-primary rounded-button px-3 py-2 text-sm text-text-primary focus:outline-none transition-all"
+                            className="w-full glass-input rounded-button px-4 py-2.5 text-sm transition-all duration-200"
                           />
                         </div>
                         <div>
@@ -1378,7 +1391,7 @@ export default function DashboardPage() {
                             onChange={(e) => setAiDescription(e.target.value)}
                             maxLength={500}
                             placeholder="e.g. In this tutorial we go over NextJS app router..."
-                            className="w-full bg-white/5 border border-white/10 focus:border-primary rounded-button px-3 py-2 text-sm text-text-primary focus:outline-none transition-all"
+                            className="w-full glass-input rounded-button px-4 py-2.5 text-sm transition-all duration-200"
                           />
                         </div>
                         <div>
@@ -1389,7 +1402,7 @@ export default function DashboardPage() {
                             onChange={(e) => setAiTags(e.target.value)}
                             maxLength={200}
                             placeholder="e.g. nextjs, react, coding"
-                            className="w-full bg-white/5 border border-white/10 focus:border-primary rounded-button px-3 py-2 text-sm text-text-primary focus:outline-none transition-all"
+                            className="w-full glass-input rounded-button px-4 py-2.5 text-sm transition-all duration-200"
                           />
                         </div>
                       </>
@@ -1398,7 +1411,7 @@ export default function DashboardPage() {
                     <button
                       type="submit"
                       disabled={aiStatus === "submitting" || aiStatus === "waiting" || aiStatus === "active"}
-                      className="w-full bg-primary hover:bg-primary/95 text-white rounded-button py-2.5 text-sm font-semibold transition-all disabled:opacity-50 mt-2"
+                      className="w-full glass-button-primary text-white rounded-button py-2.5 text-sm font-semibold transition-all disabled:opacity-50 mt-2"
                     >
                       {aiStatus === "submitting"
                         ? "Submitting Job..."
@@ -1411,8 +1424,7 @@ export default function DashboardPage() {
 
                 {/* Preview/Result Column */}
                 <div
-                  className="lg:col-span-2 bg-card rounded-card p-6 shadow-xl min-h-[350px] flex flex-col"
-                  style={{ border: "var(--border)" }}
+                  className="lg:col-span-2 glass-panel rounded-card p-6 shadow-2xl min-h-[350px] flex flex-col"
                 >
                   <h3 className="text-base font-bold mb-4 text-primary border-b border-white/5 pb-2.5">
                     AI Output Result
@@ -1661,8 +1673,7 @@ export default function DashboardPage() {
             <div className="space-y-6">
               
               <div
-                className="bg-card rounded-card p-6 shadow-xl"
-                style={{ border: "var(--border)" }}
+                className="glass-panel rounded-card p-6 shadow-xl"
               >
                 <h2 className="text-lg font-bold mb-2 text-primary tracking-tight">Audit Video Scorecard</h2>
                 <p className="text-xs text-text-muted mb-6">
@@ -1678,12 +1689,12 @@ export default function DashboardPage() {
                       onChange={(e) => setScorecardVideoIdInput(e.target.value)}
                       maxLength={25}
                       placeholder="Enter YouTube Video ID (e.g. dQw4w9WgXcQ)..."
-                      className="flex-1 bg-white/5 border border-white/10 focus:border-primary rounded-button px-4 py-2.5 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-card transition-all"
+                      className="flex-1 glass-input rounded-button px-4 py-2.5 text-sm placeholder-text-muted transition-all duration-200"
                     />
                     <button
                       type="submit"
                       disabled={scorecardStatus === "submitting" || scorecardStatus === "waiting" || scorecardStatus === "active"}
-                      className="bg-primary hover:bg-primary/95 text-white font-semibold text-sm py-2.5 px-6 rounded-button transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                      className="glass-button-primary text-white font-semibold text-sm py-2.5 px-6 rounded-button transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                     >
                       {scorecardStatus === "submitting"
                         ? "Enqueuing..."

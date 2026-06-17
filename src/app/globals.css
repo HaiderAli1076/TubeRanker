@@ -4,9 +4,24 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Prevent horizontal scroll globally */
+html, body {
+  overflow-x: hidden;
+}
+
 body {
   color: var(--text-primary);
   background: var(--background);
+}
+
+/* Utility for minimum touch target (44px) */
+.min-tap-target {
+  @apply min-w-[44px] min-h-[44px];
+}
+
+/* Ensure form controls have readable font size (>=16px) */
+input, textarea, select {
+  @apply text-base;
 }
 
 @layer utilities {
@@ -84,5 +99,73 @@ body {
     opacity: 0;
     transform: translateY(-10px);
   }
+}
+
+/* Glassmorphism & Modern UI utilities */
+.glass-panel {
+  background: rgba(18, 18, 29, 0.5);
+  backdrop-filter: blur(16px) saturate(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-panel-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.glass-panel-hover:hover {
+  background: rgba(25, 25, 38, 0.65);
+  border-color: rgba(139, 92, 246, 0.25);
+  box-shadow: 0 12px 40px 0 rgba(139, 92, 246, 0.1);
+  transform: translateY(-2px);
+}
+
+.glass-input {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  transition: all 0.2s ease-in-out;
+}
+.glass-input:focus {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.15);
+  outline: none;
+}
+
+.glass-button-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, #6d28d9 100%);
+  box-shadow: 0 4px 14px 0 rgba(139, 92, 246, 0.35);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.glass-button-primary:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 6px 20px 0 rgba(139, 92, 246, 0.5);
+  transform: translateY(-1px);
+}
+.glass-button-primary:active {
+  transform: translateY(1px);
+}
+
+/* Custom Scrollbar for dashboard panels */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Global Selection styling */
+::selection {
+  background: rgba(139, 92, 246, 0.3);
+  color: var(--text-primary);
 }
 
