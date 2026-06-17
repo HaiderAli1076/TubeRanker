@@ -56,6 +56,17 @@ const envSchema = z.object({
     .default("gemini-1.5-pro")
     .describe("One of: gemini-1.5-pro, gemini-1.5-flash, gemini-2.0-flash"),
 
+  // Groq
+  GROQ_API_KEY: z
+    .string()
+    .startsWith("gsk_")
+    .min(1)
+    .describe("Groq Console → API Keys"),
+  GROQ_MODEL: z
+    .string()
+    .default("llama-3.3-70b-specdec")
+    .describe("Groq model ID"),
+
   // Resend
   RESEND_API_KEY: z
     .string()

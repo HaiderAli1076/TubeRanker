@@ -7,7 +7,7 @@ import type { Job } from "bullmq";
 import Redis from "ioredis";
 import { env } from "../lib/env";
 import { addCredits } from "../lib/credits";
-import { generateAIContent } from "../lib/ai/gemini";
+import { generateAIContent } from "../lib/ai/groq";
 import { sanitizeInput } from "../lib/sanitize";
 import { logger } from "../lib/logger";
 import {
