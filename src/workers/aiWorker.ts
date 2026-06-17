@@ -1,12 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import "dotenv/config";
-import { fileURLToPath } from "url";
 import { Worker } from "bullmq";
 import type { Job } from "bullmq";
 import Redis from "ioredis";
 import { env } from "../lib/env";
 import { addCredits } from "../lib/credits";
-import { generateAIContent } from "../lib/ai/groq";
+import { generateAIContent } from "../lib/ai/gemini";
 import { sanitizeInput } from "../lib/sanitize";
 import { logger } from "../lib/logger";
 import {
@@ -37,16 +35,12 @@ let _workerRedisConnection: Redis | null = null;
 
 function getWorkerRedisConnection(): Redis {
   if (!_workerRedisConnection) {
-    _workerRedisConnection = new Redis(env.REDIS_URL, {
+    let redisUrl = env.REDIS_URL;
+    if (redisUrl.startsWith("redis://") && redisUrl.includes(".upstash.io")) {
+      redisUrl = redisUrl.replace("redis://", "rediss://");
+    }
+    _workerRedisConnection = new Redis(redisUrl, {
       maxRetriesPerRequest: null,
-      retryStrategy(times) {
-        if (times > 10) {
-          logger.error("Worker Redis connection failed after 10 attempts. Stopping retries.");
-          return null;
-        }
-        const delay = Math.min(Math.pow(2, times) * 100, 5000);
-        return delay;
-      },
     });
   }
   return _workerRedisConnection;
@@ -163,7 +157,7 @@ async function processAIJob(job: Job): Promise<unknown> {
     }
 
     // 3. Request content generation from Gemini
-    logger.info("Requesting content generation from Groq API", { jobId: job.id });
+    logger.info("Requesting content generation from Gemini API", { jobId: job.id });
     const rawResponse = await generateAIContent(userPrompt, systemPrompt);
 
     // 4. Strip markdown structures and validate response with Zod schema
@@ -246,14 +240,4 @@ export function startAIWorkers(): Worker[] {
   
   _workers = workers;
   return workers;
-}
-
-const isMain = typeof process !== "undefined" && process.argv[1] && (
-  process.argv[1] === fileURLToPath(import.meta.url) ||
-  process.argv[1].endsWith("aiWorker.ts") ||
-  process.argv[1].endsWith("aiWorker.js")
-);
-
-if (isMain) {
-  startAIWorkers();
 }

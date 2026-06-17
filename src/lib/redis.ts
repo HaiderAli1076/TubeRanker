@@ -16,7 +16,12 @@ export function getRedis(): Redis {
     return _redis;
   }
 
-  const client = new Redis(env.REDIS_URL, {
+  let redisUrl = env.REDIS_URL;
+  if (redisUrl.startsWith("redis://") && redisUrl.includes(".upstash.io")) {
+    redisUrl = redisUrl.replace("redis://", "rediss://");
+  }
+
+  const client = new Redis(redisUrl, {
     maxRetriesPerRequest: 3,
     retryStrategy(times) {
       if (times > 10) {

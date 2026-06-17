@@ -4,7 +4,6 @@ import Redis from "ioredis";
 import { env } from "../env";
 import { deductCredits } from "../credits";
 import { tenantStorage } from "../prisma";
-import { logger } from "../logger";
 
 const globalForQueues = globalThis as unknown as {
   queueRedisConnection: Redis | undefined;
@@ -30,16 +29,12 @@ export function getQueueRedisConnection(): Redis {
   if (_queueRedisConnection) {
     return _queueRedisConnection;
   }
-  const conn = new Redis(env.REDIS_URL, {
+  let redisUrl = env.REDIS_URL;
+  if (redisUrl.startsWith("redis://") && redisUrl.includes(".upstash.io")) {
+    redisUrl = redisUrl.replace("redis://", "rediss://");
+  }
+  const conn = new Redis(redisUrl, {
     maxRetriesPerRequest: null,
-    retryStrategy(times) {
-      if (times > 10) {
-        logger.error("Queue Redis connection failed after 10 attempts. Stopping retries.");
-        return null;
-      }
-      const delay = Math.min(Math.pow(2, times) * 100, 5000);
-      return delay;
-    },
   });
   if (process.env.NODE_ENV !== "production") {
     globalForQueues.queueRedisConnection = conn;

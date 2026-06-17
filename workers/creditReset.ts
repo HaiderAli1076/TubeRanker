@@ -4,9 +4,9 @@ import { fileURLToPath } from "url";
 import { Queue, Worker } from "bullmq";
 import type { Job } from "bullmq";
 import Redis from "ioredis";
-import { env } from "../lib/env";
-import { prisma } from "../lib/prisma";
-import { logger } from "../lib/logger";
+import { env } from "../src/lib/env";
+import { prisma } from "../src/lib/prisma";
+import { logger } from "../src/lib/logger";
 
 let _workerRedisConnection: Redis | null = null;
 

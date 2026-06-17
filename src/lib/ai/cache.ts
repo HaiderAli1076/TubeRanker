@@ -17,12 +17,12 @@ export function generateCacheKey(tool: string, inputs: Record<string, unknown>):
  * Gets a cached AI result if it exists.
  */
 export async function getCachedAIResult(key: string): Promise<unknown | null> {
-  const cached = await getRedis().get(key);
-  if (!cached) return null;
   try {
+    const cached = await getRedis().get(key);
+    if (!cached) return null;
     return JSON.parse(cached);
   } catch (error) {
-    logger.error("Failed to parse cached AI result JSON", { key, error });
+    logger.error("Failed to retrieve or parse cached AI result from Redis", { key, error });
     return null;
   }
 }
@@ -70,12 +70,12 @@ export async function saveToIdempotency(key: string, data: unknown): Promise<voi
  * Retrieves an idempotent response by its key.
  */
 export async function getIdempotentResponse(key: string): Promise<unknown | null> {
-  const value = await getRedis().get(`idempotency:${key}`);
-  if (!value) return null;
   try {
+    const value = await getRedis().get(`idempotency:${key}`);
+    if (!value) return null;
     return JSON.parse(value);
   } catch (error) {
-    logger.error("Failed to parse idempotent response JSON", { key, error });
+    logger.error("Failed to retrieve or parse idempotent response from Redis", { key, error });
     return null;
   }
 }
