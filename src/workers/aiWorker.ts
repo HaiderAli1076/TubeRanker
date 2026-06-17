@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import "dotenv/config";
+import { fileURLToPath } from "url";
 import { Worker } from "bullmq";
 import type { Job } from "bullmq";
 import Redis from "ioredis";
@@ -240,4 +242,14 @@ export function startAIWorkers(): Worker[] {
   
   _workers = workers;
   return workers;
+}
+
+const isMain = typeof process !== "undefined" && process.argv[1] && (
+  process.argv[1] === fileURLToPath(import.meta.url) ||
+  process.argv[1].endsWith("aiWorker.ts") ||
+  process.argv[1].endsWith("aiWorker.js")
+);
+
+if (isMain) {
+  startAIWorkers();
 }
