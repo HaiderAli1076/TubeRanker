@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Providers from "./providers";
-
 import "./globals.css";
+import TopNav from "@/components/TopNav";
+import BottomNav from "@/components/BottomNav";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   title: "TubeRank",
@@ -13,13 +18,25 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className={inter.variable}>
+      <head>
+        <meta charSet="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>{metadata.title as string}</title>
+        <meta name="description" content={metadata.description as string} />
+        <link rel="icon" href="/favicon.ico" />
+      </head>
       <body className={inter.className}>
-        <Providers>{children}</Providers>
+        {/* Desktop Top Navigation */}
+        <TopNav />
+        {/* Main content wrapper */}
+        <div className="min-h-screen flex flex-col">
+          <Providers>{children}</Providers>
+        </div>
+        {/* Mobile Bottom Navigation */}
+        <BottomNav />
       </body>
     </html>
   );
