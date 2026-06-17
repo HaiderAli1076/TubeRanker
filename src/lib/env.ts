@@ -56,24 +56,19 @@ const envSchema = z.object({
     .default("gemini-1.5-pro")
     .describe("One of: gemini-1.5-pro, gemini-1.5-flash, gemini-2.0-flash"),
 
-  // Groq
-  GROQ_API_KEY: z
-    .string()
-    .startsWith("gsk_")
-    .min(1)
-    .describe("Groq Console → API Keys"),
-  GROQ_MODEL: z
-    .string()
-    .default("llama3-8b-8192")
-    .describe("Groq model ID (e.g., llama3-8b-8192, llama3-70b-8192)"),
-
   // Resend
   RESEND_API_KEY: z
     .string()
     .startsWith("re_")
     .describe("Resend Dashboard (https://resend.com) → API Keys"),
+
   // Sentry
-  SENTRY_DSN: z.string().url().describe("Sentry Project Settings → Client Keys (DSN)"),
+  SENTRY_DSN: z
+    .string()
+    .url()
+    .optional()
+    .or(z.literal(""))
+    .describe("Sentry Project Settings → Client Keys (DSN)"),
 
   // PostHog (public, safe to expose)
   NEXT_PUBLIC_POSTHOG_KEY: z
