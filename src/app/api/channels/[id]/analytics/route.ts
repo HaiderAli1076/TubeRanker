@@ -6,11 +6,7 @@ import { apiHandler } from "@/lib/apiHandler";
 import { deductCredits } from "@/lib/credits";
 import { getChannelStats, getChannelVideos } from "@/lib/youtube";
 import { prisma } from "@/lib/prisma";
-import { getRedis } from "@/lib/redis";
-import { AuthError, ValidationError, NotFoundError } from "@/lib/errors";
-
-// Route-level analytics cache TTL: 24 hours (matches YouTube data freshness)
-const ANALYTICS_CACHE_TTL = 86400;
+import { AuthError, ValidationError, NotFoundError, AppError, YouTubeError } from "@/lib/errors";
 
 export const GET = apiHandler<{ params: { id: string } }>(async (req, context) => {
   const session = await getServerSession(authOptions);
@@ -29,19 +25,8 @@ export const GET = apiHandler<{ params: { id: string } }>(async (req, context) =
   const take = Math.min(parseInt(searchParams.get("take") || "10", 10), 50);
   const cursor = searchParams.get("cursor") || undefined;
 
-  // ── Fix 3: Check route-level analytics cache FIRST (zero credit cost on HIT) ──
-  // Key covers the full response shape: channel ID + pagination params
-  const analyticsCacheKey = `analytics:${channelIdParam}:${take}:${cursor ?? "start"}`;
-  const cachedAnalytics = await getRedis().get(analyticsCacheKey);
-  if (cachedAnalytics) {
-    return NextResponse.json({
-      success: true,
-      data: JSON.parse(cachedAnalytics),
-      cached: true,
-    });
-  }
-
-  // Cache MISS — proceed with DB / YouTube lookup
+  // Deduct 1 credit for viewing channel analytics
+  await deductCredits(userId, "channel-analytics", 1);
 
   // 1. Find or fetch the channel details
   let dbChannel = await prisma.channel.findFirst({
@@ -56,35 +41,31 @@ export const GET = apiHandler<{ params: { id: string } }>(async (req, context) =
   let stats;
   if (!dbChannel) {
     // If not in database, fetch from YouTube API
-    // ── Fix 4: Only deduct credits AFTER a successful YouTube response ──
-    let apiStats;
     try {
-      apiStats = await getChannelStats(channelIdParam);
+      const apiStats = await getChannelStats(channelIdParam);
+      stats = apiStats.statistics;
+
+      dbChannel = await prisma.channel.create({
+        data: {
+          youtubeId: apiStats.id,
+          title: apiStats.snippet.title,
+          description: apiStats.snippet.description,
+          thumbnailUrl: apiStats.snippet.thumbnails?.default?.url || "",
+          publishedAt: new Date(apiStats.snippet.publishedAt),
+        },
+      });
     } catch (error) {
-      // Channel not found / YouTube error — do NOT deduct credits
-      throw new NotFoundError(`Channel not found on YouTube: ${channelIdParam}`);
+      if (error instanceof AppError) {
+        if (error instanceof YouTubeError && error.message.includes("Channel not found")) {
+          throw new NotFoundError(`Channel not found on YouTube: ${channelIdParam}`);
+        }
+        throw error;
+      }
+      throw error;
     }
-
-    stats = apiStats.statistics;
-
-    dbChannel = await prisma.channel.create({
-      data: {
-        youtubeId: apiStats.id,
-        title: apiStats.snippet.title,
-        description: apiStats.snippet.description,
-        thumbnailUrl: apiStats.snippet.thumbnails?.default?.url || "",
-        publishedAt: new Date(apiStats.snippet.publishedAt),
-      },
-    });
   } else {
-    // Channel already in DB — refresh statistics from YouTube (getChannelStats has its own 24h Redis cache via CACHE_KEYS.channelStats)
-    let apiStats;
-    try {
-      apiStats = await getChannelStats(dbChannel.youtubeId);
-    } catch (error) {
-      // If refresh fails, do NOT deduct credits — just re-use existing DB data
-      throw new NotFoundError(`Channel stats unavailable for: ${dbChannel.youtubeId}`);
-    }
+    // If it exists, refresh statistics from YouTube (with 24h caching inside getChannelStats)
+    const apiStats = await getChannelStats(dbChannel.youtubeId);
     stats = apiStats.statistics;
   }
 
@@ -92,10 +73,7 @@ export const GET = apiHandler<{ params: { id: string } }>(async (req, context) =
     throw new NotFoundError("Channel not found");
   }
 
-  // ── Fix 4: Deduct 1 credit only AFTER we have a successful channel response ──
-  await deductCredits(userId, "channel-analytics", 1);
-
-  // 2. Refresh / Sync video uploads from YouTube if DB is empty
+  // 2. Refresh / Sync video uploads from YouTube if DB is empty or a force refresh is triggered
   const dbVideosCount = await prisma.video.count({
     where: { channelId: dbChannel.id },
   });
@@ -113,10 +91,9 @@ export const GET = apiHandler<{ params: { id: string } }>(async (req, context) =
       }>;
 
       // Batch create video uploads in the database
-      const channelDbId = dbChannel.id;
       const videosData = items.map((item) => ({
         youtubeId: item.id.videoId,
-        channelId: channelDbId,
+        channelId: dbChannel.id,
         title: item.snippet?.title || "",
         description: item.snippet?.description || "",
         viewCount: BigInt(Math.floor(Math.random() * 50000) + 100), // mocked starting views for search results
@@ -158,30 +135,25 @@ export const GET = apiHandler<{ params: { id: string } }>(async (req, context) =
 
   const nextCursor = videos.length === take ? videos[videos.length - 1]?.id ?? null : null;
 
-  const responseData = {
-    channel: {
-      id: dbChannel.id,
-      youtubeId: dbChannel.youtubeId,
-      title: dbChannel.title,
-      description: dbChannel.description,
-      thumbnailUrl: dbChannel.thumbnailUrl,
-      publishedAt: dbChannel.publishedAt,
-    },
-    stats: {
-      viewCount: stats?.viewCount || "0",
-      subscriberCount: stats?.subscriberCount || "0",
-      videoCount: stats?.videoCount || "0",
-      hiddenSubscriberCount: stats?.hiddenSubscriberCount || false,
-    },
-    history: formattedVideos,
-    nextCursor,
-  };
-
-  // ── Fix 3: Store successful response in analytics cache ──
-  await getRedis().set(analyticsCacheKey, JSON.stringify(responseData), "EX", ANALYTICS_CACHE_TTL);
-
   return NextResponse.json({
     success: true,
-    data: responseData,
+    data: {
+      channel: {
+        id: dbChannel.id,
+        youtubeId: dbChannel.youtubeId,
+        title: dbChannel.title,
+        description: dbChannel.description,
+        thumbnailUrl: dbChannel.thumbnailUrl,
+        publishedAt: dbChannel.publishedAt,
+      },
+      stats: {
+        viewCount: stats?.viewCount || "0",
+        subscriberCount: stats?.subscriberCount || "0",
+        videoCount: stats?.videoCount || "0",
+        hiddenSubscriberCount: stats?.hiddenSubscriberCount || false,
+      },
+      history: formattedVideos,
+      nextCursor,
+    },
   });
 });
