@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import "dotenv/config";
 import { prisma, tenantStorage } from "../lib/prisma";
-import { redis } from "../lib/redis";
+import { getRedis } from "../lib/redis";
 
 async function runTenancyTest() {
   console.log("--------------------------------------------------");
@@ -48,7 +48,7 @@ async function runTenancyTest() {
   });
   console.log("✅ Cleanup complete.");
 
-  await redis.quit();
+  await getRedis().quit();
   process.exit(0);
 }
 

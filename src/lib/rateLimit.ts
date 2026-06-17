@@ -1,4 +1,4 @@
-import { redis } from "./redis";
+import { getRedis } from "./redis";
 import { RateLimitError } from "./errors";
 import { logger } from "./logger";
 
@@ -19,7 +19,7 @@ export async function rateLimit(
   const clearBefore = now - windowMs;
 
   try {
-    const multi = redis.multi();
+    const multi = getRedis().multi();
     // Remove timestamps older than the sliding window
     multi.zremrangebyscore(key, 0, clearBefore);
     // Add the current request timestamp
@@ -40,7 +40,7 @@ export async function rateLimit(
 
     if (count > limit) {
       // Find the oldest request in the window to calculate retry-after
-      const oldestTimestamps = await redis.zrange(key, 0, 0, "WITHSCORES");
+      const oldestTimestamps = await getRedis().zrange(key, 0, 0, "WITHSCORES");
       let oldestTime = now - windowMs;
       if (oldestTimestamps.length >= 2) {
         oldestTime = parseFloat(oldestTimestamps[1] || "0");

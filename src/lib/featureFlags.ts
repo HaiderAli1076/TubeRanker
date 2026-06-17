@@ -1,12 +1,12 @@
 import { prisma } from "./prisma";
-import { redis } from "./redis";
+import { getRedis } from "./redis";
 import { logger } from "./logger";
 
 export async function isFeatureEnabled(key: string, userId?: string): Promise<boolean> {
   const cacheKey = `feature-flag:${key}`;
 
   try {
-    const cachedValue = await redis.get(cacheKey);
+    const cachedValue = await getRedis().get(cacheKey);
     if (cachedValue !== null) {
       return cachedValue === "true";
     }
@@ -22,7 +22,7 @@ export async function isFeatureEnabled(key: string, userId?: string): Promise<bo
     const isEnabled = flag?.isEnabled ?? false;
 
     try {
-      await redis.setex(cacheKey, 60, isEnabled ? "true" : "false");
+      await getRedis().setex(cacheKey, 60, isEnabled ? "true" : "false");
     } catch (cacheError) {
       logger.warn("Failed to set feature flag in Redis cache", { key, cacheError, userId });
     }

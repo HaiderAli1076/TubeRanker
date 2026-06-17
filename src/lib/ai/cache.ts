@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { redis } from "../redis";
+import { getRedis } from "../redis";
 import { logger } from "../logger";
 
 const MAX_IDEMPOTENCY_SIZE = 100 * 1024; // 100KB limit
@@ -17,7 +17,7 @@ export function generateCacheKey(tool: string, inputs: Record<string, unknown>):
  * Gets a cached AI result if it exists.
  */
 export async function getCachedAIResult(key: string): Promise<unknown | null> {
-  const cached = await redis.get(key);
+  const cached = await getRedis().get(key);
   if (!cached) return null;
   try {
     return JSON.parse(cached);
@@ -37,7 +37,7 @@ export async function setCachedAIResult(
 ): Promise<void> {
   const ttlSeconds = ttlDays * 24 * 60 * 60;
   try {
-    await redis.set(key, JSON.stringify(data), "EX", ttlSeconds);
+    await getRedis().set(key, JSON.stringify(data), "EX", ttlSeconds);
     logger.info("AI result successfully cached", { key, ttlDays });
   } catch (error) {
     logger.error("Failed to cache AI result in Redis", { key, error });
@@ -59,7 +59,7 @@ export async function saveToIdempotency(key: string, data: unknown): Promise<voi
       return;
     }
     // Cache the response for 24 hours (86,400 seconds)
-    await redis.set(`idempotency:${key}`, serialized, "EX", 24 * 60 * 60);
+    await getRedis().set(`idempotency:${key}`, serialized, "EX", 24 * 60 * 60);
     logger.info("Idempotency response cached successfully", { key, sizeBytes: serialized.length });
   } catch (error) {
     logger.error("Failed to save idempotency response in Redis", { key, error });
@@ -70,7 +70,7 @@ export async function saveToIdempotency(key: string, data: unknown): Promise<voi
  * Retrieves an idempotent response by its key.
  */
 export async function getIdempotentResponse(key: string): Promise<unknown | null> {
-  const value = await redis.get(`idempotency:${key}`);
+  const value = await getRedis().get(`idempotency:${key}`);
   if (!value) return null;
   try {
     return JSON.parse(value);

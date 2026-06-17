@@ -5,7 +5,7 @@ import { apiHandler } from "@/lib/apiHandler";
 import { deductCredits } from "@/lib/credits";
 import { getKeywordSuggestions, CACHE_KEYS } from "@/lib/youtube";
 import { prisma } from "@/lib/prisma";
-import { redis } from "@/lib/redis";
+import { getRedis } from "@/lib/redis";
 import { AuthError, ValidationError } from "@/lib/errors";
 
 export const GET = apiHandler(async (req) => {
@@ -27,7 +27,7 @@ export const GET = apiHandler(async (req) => {
   // Reuse the same key pattern as getKeywordSuggestions' internal cache so
   // we share the 24h TTL window with the youtube lib's own getCachedOrFetch.
   const cacheKey = CACHE_KEYS.keywordSuggestions(query);
-  const cached = await redis.get(cacheKey);
+  const cached = await getRedis().get(cacheKey);
   if (cached) {
     // Cache HIT — return data with zero credit cost
     return NextResponse.json({

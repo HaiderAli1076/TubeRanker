@@ -5,7 +5,7 @@ import { generateAIContent } from "../lib/ai/gemini";
 import { scorecardPrompts } from "../lib/ai/prompts/v1/prompts";
 import { scorecardSchema, parseAIOutput } from "../lib/ai/schemas";
 import { calculateOverallScore, SCORE_WEIGHTS } from "../lib/ai/scorecard";
-import { redis } from "../lib/redis";
+import { getRedis } from "../lib/redis";
 
 async function runScorecardSanityTest() {
   console.log("--------------------------------------------------");
@@ -79,7 +79,7 @@ async function runScorecardSanityTest() {
   }
 
   // Clean connection
-  await redis.quit();
+  await getRedis().quit();
   process.exit(0);
 }
 

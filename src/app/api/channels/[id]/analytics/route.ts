@@ -6,7 +6,7 @@ import { apiHandler } from "@/lib/apiHandler";
 import { deductCredits } from "@/lib/credits";
 import { getChannelStats, getChannelVideos } from "@/lib/youtube";
 import { prisma } from "@/lib/prisma";
-import { redis } from "@/lib/redis";
+import { getRedis } from "@/lib/redis";
 import { AuthError, ValidationError, NotFoundError } from "@/lib/errors";
 
 // Route-level analytics cache TTL: 24 hours (matches YouTube data freshness)
@@ -32,7 +32,7 @@ export const GET = apiHandler<{ params: { id: string } }>(async (req, context) =
   // ── Fix 3: Check route-level analytics cache FIRST (zero credit cost on HIT) ──
   // Key covers the full response shape: channel ID + pagination params
   const analyticsCacheKey = `analytics:${channelIdParam}:${take}:${cursor ?? "start"}`;
-  const cachedAnalytics = await redis.get(analyticsCacheKey);
+  const cachedAnalytics = await getRedis().get(analyticsCacheKey);
   if (cachedAnalytics) {
     return NextResponse.json({
       success: true,
@@ -178,7 +178,7 @@ export const GET = apiHandler<{ params: { id: string } }>(async (req, context) =
   };
 
   // ── Fix 3: Store successful response in analytics cache ──
-  await redis.set(analyticsCacheKey, JSON.stringify(responseData), "EX", ANALYTICS_CACHE_TTL);
+  await getRedis().set(analyticsCacheKey, JSON.stringify(responseData), "EX", ANALYTICS_CACHE_TTL);
 
   return NextResponse.json({
     success: true,

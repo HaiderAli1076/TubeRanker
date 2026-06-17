@@ -2,7 +2,7 @@
 import "dotenv/config";
 import { getKeywordSuggestions } from "../lib/youtube";
 import { generateAIContent } from "../lib/ai/gemini";
-import { redis } from "../lib/redis";
+import { getRedis } from "../lib/redis";
 
 async function verifyDependencies() {
   console.log("Verifying YouTube Data API Integration...");
@@ -30,7 +30,7 @@ async function verifyDependencies() {
   }
 
   // Cleanup connections
-  await redis.quit();
+  await getRedis().quit();
   console.log("\n🎉 ALL DEPENDENCY CHECKS PASSED!");
   process.exit(0);
 }

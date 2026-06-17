@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import "dotenv/config";
+import { fileURLToPath } from "url";
 import { Worker } from "bullmq";
 import type { Job } from "bullmq";
 import Redis from "ioredis";
@@ -32,9 +33,24 @@ import { getVideoDetails } from "../lib/youtube";
 import { calculateOverallScore } from "../lib/ai/scorecard";
 import { tenantStorage } from "../lib/prisma";
 
-const workerRedisConnection = new Redis(env.REDIS_URL, {
-  maxRetriesPerRequest: null,
-});
+let _workerRedisConnection: Redis | null = null;
+
+function getWorkerRedisConnection(): Redis {
+  if (!_workerRedisConnection) {
+    _workerRedisConnection = new Redis(env.REDIS_URL, {
+      maxRetriesPerRequest: null,
+      retryStrategy(times) {
+        if (times > 10) {
+          logger.error("Worker Redis connection failed after 10 attempts. Stopping retries.");
+          return null;
+        }
+        const delay = Math.min(Math.pow(2, times) * 100, 5000);
+        return delay;
+      },
+    });
+  }
+  return _workerRedisConnection;
+}
 
 /**
  * Refund credits to the user if the job fails.
@@ -196,25 +212,48 @@ async function processAIJob(job: Job): Promise<unknown> {
   });
 }
 
-// Instantiate BullMQ Workers for all three priorities
-const highWorker = new Worker("ai-high", processAIJob, { connection: workerRedisConnection as any });
-const mediumWorker = new Worker("ai-medium", processAIJob, { connection: workerRedisConnection as any });
-const lowWorker = new Worker("ai-low", processAIJob, { connection: workerRedisConnection as any });
+let _workers: Worker[] | null = null;
 
-const workers = [highWorker, mediumWorker, lowWorker];
+export function startAIWorkers(): Worker[] {
+  if (_workers) {
+    return _workers;
+  }
 
-// Attach refund event listeners for all workers
-workers.forEach((worker) => {
-  worker.on("failed", async (job, error) => {
-    if (job) {
-      await refundCredits(job.data.userId, job.data.tool, job.data.credits);
-      logger.error("AI job failed, credits refunded", { jobId: job.id, error });
-    }
+  const connection = getWorkerRedisConnection();
+
+  // Instantiate BullMQ Workers for all three priorities
+  const highWorker = new Worker("ai-high", processAIJob, { connection: connection as any });
+  const mediumWorker = new Worker("ai-medium", processAIJob, { connection: connection as any });
+  const lowWorker = new Worker("ai-low", processAIJob, { connection: connection as any });
+
+  const workers = [highWorker, mediumWorker, lowWorker];
+
+  // Attach refund event listeners for all workers
+  workers.forEach((worker) => {
+    worker.on("failed", async (job, error) => {
+      if (job) {
+        await refundCredits(job.data.userId, job.data.tool, job.data.credits);
+        logger.error("AI job failed, credits refunded", { jobId: job.id, error });
+      }
+    });
+
+    worker.on("error", (err) => {
+      logger.error("BullMQ AI Worker encountered an error", { queue: worker.name, error: err });
+    });
   });
 
-  worker.on("error", (err) => {
-    logger.error("BullMQ AI Worker encountered an error", { queue: worker.name, error: err });
-  });
-});
+  logger.info("BullMQ AI Workers successfully initialized for ai-high, ai-medium, and ai-low queues");
+  
+  _workers = workers;
+  return workers;
+}
 
-logger.info("BullMQ AI Workers successfully initialized for ai-high, ai-medium, and ai-low queues");
+const isMain = typeof process !== "undefined" && process.argv[1] && (
+  process.argv[1] === fileURLToPath(import.meta.url) ||
+  process.argv[1].endsWith("aiWorker.ts") ||
+  process.argv[1].endsWith("aiWorker.js")
+);
+
+if (isMain) {
+  startAIWorkers();
+}

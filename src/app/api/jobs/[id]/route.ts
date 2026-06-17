@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { apiHandler } from "@/lib/apiHandler";
-import { queues } from "@/lib/ai/queue";
+import { getQueues } from "@/lib/ai/queue";
 import { AuthError, NotFoundError } from "@/lib/errors";
 
 export const GET = apiHandler<{ params: { id: string } }>(async (req, context) => {
@@ -14,9 +14,9 @@ export const GET = apiHandler<{ params: { id: string } }>(async (req, context) =
   const jobId = context.params.id;
 
   // Search for the job in high, medium, and low priority queues
-  let job = await queues.high.getJob(jobId);
-  if (!job) job = await queues.medium.getJob(jobId);
-  if (!job) job = await queues.low.getJob(jobId);
+  let job = await getQueues().high.getJob(jobId);
+  if (!job) job = await getQueues().medium.getJob(jobId);
+  if (!job) job = await getQueues().low.getJob(jobId);
 
   if (!job) {
     throw new NotFoundError(`Job with ID ${jobId} not found or has expired`);

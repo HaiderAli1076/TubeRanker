@@ -4,17 +4,71 @@ import Redis from "ioredis";
 import { env } from "../env";
 import { deductCredits } from "../credits";
 import { tenantStorage } from "../prisma";
+import { logger } from "../logger";
+
+const globalForQueues = globalThis as unknown as {
+  queueRedisConnection: Redis | undefined;
+  queues: {
+    readonly high: Queue;
+    readonly medium: Queue;
+    readonly low: Queue;
+  } | undefined;
+};
+
+let _queueRedisConnection: Redis | null = null;
+let _queues: {
+  readonly high: Queue;
+  readonly medium: Queue;
+  readonly low: Queue;
+} | null = null;
 
 // BullMQ connection must set maxRetriesPerRequest to null
-export const queueRedisConnection = new Redis(env.REDIS_URL, {
-  maxRetriesPerRequest: null,
-});
+export function getQueueRedisConnection(): Redis {
+  if (globalForQueues.queueRedisConnection) {
+    return globalForQueues.queueRedisConnection;
+  }
+  if (_queueRedisConnection) {
+    return _queueRedisConnection;
+  }
+  const conn = new Redis(env.REDIS_URL, {
+    maxRetriesPerRequest: null,
+    retryStrategy(times) {
+      if (times > 10) {
+        logger.error("Queue Redis connection failed after 10 attempts. Stopping retries.");
+        return null;
+      }
+      const delay = Math.min(Math.pow(2, times) * 100, 5000);
+      return delay;
+    },
+  });
+  if (process.env.NODE_ENV !== "production") {
+    globalForQueues.queueRedisConnection = conn;
+  } else {
+    _queueRedisConnection = conn;
+  }
+  return conn;
+}
 
-export const queues = {
-  high: new Queue("ai-high", { connection: queueRedisConnection as any }),
-  medium: new Queue("ai-medium", { connection: queueRedisConnection as any }),
-  low: new Queue("ai-low", { connection: queueRedisConnection as any }),
-} as const;
+export function getQueues() {
+  if (globalForQueues.queues) {
+    return globalForQueues.queues;
+  }
+  if (_queues) {
+    return _queues;
+  }
+  const conn = getQueueRedisConnection();
+  const instances = {
+    high: new Queue("ai-high", { connection: conn as any }),
+    medium: new Queue("ai-medium", { connection: conn as any }),
+    low: new Queue("ai-low", { connection: conn as any }),
+  } as const;
+  if (process.env.NODE_ENV !== "production") {
+    globalForQueues.queues = instances;
+  } else {
+    _queues = instances;
+  }
+  return instances;
+}
 
 export type JobPriority = "high" | "medium" | "low";
 
@@ -34,7 +88,7 @@ export async function addAIJob(
   const store = tenantStorage.getStore();
   const workspaceId = store?.workspaceId || undefined;
 
-  const queue = queues[priority];
+  const queue = getQueues()[priority];
   const job = await queue.add(
     tool,
     {

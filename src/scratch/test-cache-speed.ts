@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import "dotenv/config";
 import { getKeywordSuggestions } from "../lib/youtube";
-import { redis } from "../lib/redis";
+import { getRedis } from "../lib/redis";
 
 async function runCacheTest() {
   console.log("Starting Cache Effectiveness Test...");
@@ -9,7 +9,7 @@ async function runCacheTest() {
 
   // Ensure key doesn't exist in Redis beforehand so first call is guaranteed to be a MISS
   const cacheKey = `yt:keyword:${query}`;
-  await redis.del(cacheKey);
+  await getRedis().del(cacheKey);
 
   // 1. First Call: Cache MISS (hits YouTube Data API v3)
   console.log(`\nExecuting first call for "${query}" (Expected: Cache MISS)...`);
@@ -36,10 +36,10 @@ async function runCacheTest() {
   }
 
   // Cleanup Redis test key
-  await redis.del(cacheKey);
+  await getRedis().del(cacheKey);
   
   // Close connection pool
-  await redis.quit();
+  await getRedis().quit();
 }
 
 runCacheTest().catch((err) => {
