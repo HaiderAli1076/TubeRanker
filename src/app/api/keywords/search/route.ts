@@ -3,9 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { apiHandler } from "@/lib/apiHandler";
 import { deductCredits } from "@/lib/credits";
-import { getKeywordSuggestions, CACHE_KEYS } from "@/lib/youtube";
+import { getKeywordSuggestions } from "@/lib/youtube";
 import { prisma } from "@/lib/prisma";
-import { getRedis } from "@/lib/redis";
 import { AuthError, ValidationError } from "@/lib/errors";
 
 export const GET = apiHandler(async (req) => {
@@ -23,25 +22,11 @@ export const GET = apiHandler(async (req) => {
 
   const userId = session.user.id;
 
-  // ── Cache-first: check Redis before deducting any credits ──
-  // Reuse the same key pattern as getKeywordSuggestions' internal cache so
-  // we share the 24h TTL window with the youtube lib's own getCachedOrFetch.
-  const cacheKey = CACHE_KEYS.keywordSuggestions(query);
-  const cached = await getRedis().get(cacheKey);
-  if (cached) {
-    // Cache HIT — return data with zero credit cost
-    return NextResponse.json({
-      success: true,
-      data: JSON.parse(cached),
-      cached: true,
-    });
-  }
-
-  // Cache MISS — call YouTube API, then deduct credits only on success
-  const results = await getKeywordSuggestions(query);
-
-  // ── Deduct 1 credit only after a successful API response ──
+  // Deduct 1 credit for using the keyword tool
   await deductCredits(userId, "keyword-search", 1);
+
+  // Fetch suggestions and volume (handled with Redis caching inside)
+  const results = await getKeywordSuggestions(query);
 
   // Record keyword search history in database
   await prisma.keywordHistory.create({
@@ -57,3 +42,49 @@ export const GET = apiHandler(async (req) => {
     data: results,
   });
 });
+
+export const POST = apiHandler(async (req) => {
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user || !session.user.id) {
+    throw new AuthError("You must be logged in to perform keyword research");
+  }
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch (error) {
+    throw new ValidationError("Invalid JSON request body");
+  }
+
+  const queryObj = body as Record<string, unknown>;
+  const query = (
+    (typeof queryObj?.q === "string" ? queryObj.q : typeof queryObj?.query === "string" ? queryObj.query : "") as string
+  ).trim();
+
+  if (!query) {
+    throw new ValidationError("Search query 'q' or 'query' is required in the body", "q");
+  }
+
+  const userId = session.user.id;
+
+  // Deduct 1 credit for using the keyword tool
+  await deductCredits(userId, "keyword-search", 1);
+
+  // Fetch suggestions and volume (handled with Redis caching inside)
+  const results = await getKeywordSuggestions(query);
+
+  // Record keyword search history in database
+  await prisma.keywordHistory.create({
+    data: {
+      userId,
+      keyword: query,
+      volume: results.volume || 0,
+    },
+  });
+
+  return NextResponse.json({
+    success: true,
+    data: results,
+  });
+});
+
