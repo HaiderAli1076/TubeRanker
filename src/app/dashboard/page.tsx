@@ -667,10 +667,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#06060a] text-text-primary overflow-hidden font-sans relative">
-      {/* Background Ambient Glow Orbs */}
-      <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-primary/10 blur-[150px] pointer-events-none animate-orb-1 z-0" />
-      <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-accent/5 blur-[150px] pointer-events-none animate-orb-2 z-0" />
+    <div className="flex min-h-screen bg-background text-text-primary overflow-hidden font-sans relative">
 
       {/* DESKTOP SIDEBAR */}
       <aside

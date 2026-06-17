@@ -103,44 +103,42 @@ input, textarea, select {
 
 /* Glassmorphism & Modern UI utilities */
 .glass-panel {
-  background: rgba(18, 18, 29, 0.5);
-  backdrop-filter: blur(16px) saturate(120%);
-  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  background: #131313;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.4);
 }
 
 .glass-panel-hover {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .glass-panel-hover:hover {
-  background: rgba(25, 25, 38, 0.65);
-  border-color: rgba(139, 92, 246, 0.25);
-  box-shadow: 0 12px 40px 0 rgba(139, 92, 246, 0.1);
+  background: #181818;
+  border-color: rgba(124, 58, 237, 0.25);
+  box-shadow: 0 12px 40px 0 rgba(124, 58, 237, 0.08);
   transform: translateY(-2px);
 }
 
 .glass-input {
-  background: rgba(255, 255, 255, 0.03);
+  background: #1c1c1c;
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--text-primary);
   transition: all 0.2s ease-in-out;
 }
 .glass-input:focus {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(139, 92, 246, 0.5);
-  box-shadow: 0 0 15px rgba(139, 92, 246, 0.15);
+  background: #222222;
+  border-color: rgba(124, 58, 237, 0.5);
+  box-shadow: 0 0 15px rgba(124, 58, 237, 0.15);
   outline: none;
 }
 
 .glass-button-primary {
-  background: linear-gradient(135deg, var(--primary) 0%, #6d28d9 100%);
-  box-shadow: 0 4px 14px 0 rgba(139, 92, 246, 0.35);
+  background: linear-gradient(135deg, var(--primary) 0%, #5b21b6 100%);
+  box-shadow: 0 4px 14px 0 rgba(124, 58, 237, 0.35);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .glass-button-primary:hover {
   filter: brightness(1.1);
-  box-shadow: 0 6px 20px 0 rgba(139, 92, 246, 0.5);
+  box-shadow: 0 6px 20px 0 rgba(124, 58, 237, 0.5);
   transform: translateY(-1px);
 }
 .glass-button-primary:active {
