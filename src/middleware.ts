@@ -5,9 +5,13 @@ import { getToken } from "next-auth/jwt";
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Handle CORS preflight OPTIONS requests from Chrome Extensions
   const origin = req.headers.get("origin") || "";
-  const isExtension = origin.startsWith("chrome-extension://");
+  const ALLOWED_EXTENSIONS = [
+    "chrome-extension://ihpcgflkfhocmfgohjlnkkjflpmpnhlh", // Main Chrome Extension ID
+  ];
+  const isExtension =
+    ALLOWED_EXTENSIONS.includes(origin) ||
+    (process.env.NODE_ENV === "development" && origin.startsWith("chrome-extension://"));
   if (isExtension && req.method === "OPTIONS") {
     return new NextResponse(null, {
       status: 204,
