@@ -1,5 +1,5 @@
 import { env } from "./env";
-import { getRedis } from "./redis";
+import { getRedis, incrementCommands } from "./redis";
 import { QuotaError, YouTubeError } from "./errors";
 import { logger } from "./logger";
 
@@ -25,6 +25,7 @@ export async function checkAndIncrementQuota(cost: number): Promise<void> {
   const key = `youtube:quota:${dateStr}`;
 
   // Increment consumption by cost
+  incrementCommands(1);
   const currentQuota = await getRedis().incrby(key, cost);
 
   // Set expiration to midnight UTC on the first request of the day
@@ -36,6 +37,7 @@ export async function checkAndIncrementQuota(cost: number): Promise<void> {
       0, 0, 0, 0
     ));
     const secondsUntilMidnight = Math.ceil((midnight.getTime() - now.getTime()) / 1000);
+    incrementCommands(1);
     await getRedis().expire(key, secondsUntilMidnight);
     logger.info(`Initialized daily YouTube quota tracking for ${dateStr}. Expires in ${secondsUntilMidnight}s.`);
   }
@@ -57,6 +59,7 @@ async function getCachedOrFetch<T>(
   fetchFn: () => Promise<T>
 ): Promise<T> {
   // Check cache first
+  incrementCommands(1);
   const cached = await getRedis().get(cacheKey);
   if (cached) {
     logger.info("YouTube cache HIT", { cacheKey });
@@ -71,6 +74,7 @@ async function getCachedOrFetch<T>(
   const data = await fetchFn();
 
   // Save to cache
+  incrementCommands(1);
   await getRedis().set(cacheKey, JSON.stringify(data), "EX", DEFAULT_CACHE_TTL);
   return data;
 }

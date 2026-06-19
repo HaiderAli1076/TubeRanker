@@ -8,10 +8,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
 import posthog from "posthog-js";
 import { z } from "zod";
+import { useCountUp } from "@/hooks/useCountUp";
 // Dynamic imports for Recharts components
 import dynamic from "next/dynamic";
 
-const LineChart = dynamic(() => import("recharts").then(mod => ({ default: mod.LineChart })), { ssr: false });
+const ComposedChart = dynamic(() => import("recharts").then(mod => ({ default: mod.ComposedChart })), { ssr: false });
+const Area = dynamic(() => import("recharts").then(mod => ({ default: mod.Area })), { ssr: false });
 const Line = dynamic(() => import("recharts").then(mod => ({ default: mod.Line })), { ssr: false });
 const XAxis = dynamic(() => import("recharts").then(mod => ({ default: mod.XAxis })), { ssr: false });
 const YAxis = dynamic(() => import("recharts").then(mod => ({ default: mod.YAxis })), { ssr: false });
@@ -104,6 +106,89 @@ const aiDescriptionSchema = z
   .min(1, "Video Description/Summary is required")
   .max(500, "Description cannot exceed 500 characters");
 
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    const getSwatchColor = (name: string, fallback: string) => {
+      if (name === "Views") return "#8B5CF6";
+      if (name === "Likes") return "#10B981";
+      return fallback;
+    };
+    return (
+      <div className="bg-[#111115]/95 border border-white/10 rounded-card p-3 shadow-2xl backdrop-blur-md text-left max-w-[240px]">
+        <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">
+          {data.date}
+        </p>
+        <p className="text-xs font-bold text-text-primary truncate mb-2" title={data.fullTitle}>
+          {data.fullTitle}
+        </p>
+        <div className="space-y-1.5 border-t border-white/5 pt-1.5">
+          {payload.map((item: any) => (
+            <div key={item.name} className="flex justify-between items-center gap-4 text-xs">
+              <span className="flex items-center gap-1.5 text-text-muted">
+                <span
+                  className="w-2.5 h-2.5 rounded-full shrink-0"
+                  style={{ backgroundColor: getSwatchColor(item.name, item.stroke || item.color) }}
+                />
+                {item.name}:
+              </span>
+              <span className="font-extrabold text-text-primary">
+                {item.value.toLocaleString()}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+const ChannelAvatar = ({ src, title }: { src: string | null | undefined; title: string }) => {
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setHasError(false);
+  }, [src]);
+
+  const initial = title ? title.trim().charAt(0).toUpperCase() : "?";
+
+  if (!src || hasError) {
+    return (
+      <div className="w-12 h-12 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-primary font-bold text-lg shrink-0 select-none">
+        {initial}
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-12 h-12 rounded-full border border-white/10 overflow-hidden shrink-0">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt=""
+        onError={() => setHasError(true)}
+        className="w-full h-full object-cover"
+      />
+    </div>
+  );
+};
+
+interface PrimaryButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  className?: string;
+}
+
+const PrimaryButton = ({ children, className = "", ...props }: PrimaryButtonProps) => {
+  return (
+    <button
+      {...props}
+      className={`glass-button-primary text-white font-semibold rounded-button hover:scale-[1.01] active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed ${className}`}
+    >
+      {children}
+    </button>
+  );
+};
+
 export default function DashboardPage() {
   const queryClient = useQueryClient();
   const [mounted, setMounted] = useState(false);
@@ -134,6 +219,44 @@ export default function DashboardPage() {
 
   // Competitor Tracker States
   const [newCompetitorId, setNewCompetitorId] = useState("");
+
+  // Toast notification state & handlers
+  const [toast, setToast] = useState<{
+    show: boolean;
+    message: string;
+    type: "success" | "error";
+  }>({
+    show: false,
+    message: "",
+    type: "success",
+  });
+
+  const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const showToastMessage = (message: string, type: "success" | "error" = "success") => {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = null;
+    }
+
+    setToast({
+      show: true,
+      message,
+      type,
+    });
+
+    toastTimerRef.current = setTimeout(() => {
+      setToast((prev) => ({ ...prev, show: false }));
+    }, 5000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
+      }
+    };
+  }, []);
 
   // AI Suite states
   const [selectedTool, setSelectedTool] = useState<
@@ -174,6 +297,11 @@ export default function DashboardPage() {
 
       // Handle 402: Quota Exceeded upgrade trigger
       if (res.status === 402) {
+        const resClone = res.clone();
+        const json = await resClone.json().catch(() => ({}));
+        if (json.error?.code === "QUOTA_EXCEEDED") {
+          throw new Error(json.error.message || "AI features are temporarily paused due to system limits. Please try again later.");
+        }
         setIsQuotaModalOpen(true);
         throw new Error("Credit quota exceeded. Please upgrade.");
       }
@@ -369,9 +497,10 @@ export default function DashboardPage() {
       return json.data;
     },
     staleTime: 300000,
+    refetchInterval: 60000, // Refetch every 60 seconds to detect quota changes/resets
   });
 
-  const { data: competitors, isLoading: isLoadingComp } = useQuery<CompetitorItem[]>({
+  const { data: competitors = [], isLoading: isLoadingComp } = useQuery<CompetitorItem[]>({
     queryKey: ["competitors"],
     queryFn: async ({ signal }) => {
       const json = await customFetch("/api/competitors", { signal });
@@ -416,6 +545,15 @@ export default function DashboardPage() {
     retry: false,
   });
 
+  // Get stat end values for animation when data resolves
+  const subscriberEnd = channelData ? parseInt(channelData.stats.subscriberCount, 10) || 0 : 0;
+  const viewEnd = channelData ? parseInt(channelData.stats.viewCount, 10) || 0 : 0;
+  const videoEnd = channelData ? parseInt(channelData.stats.videoCount, 10) || 0 : 0;
+
+  const animatedSubscribers = useCountUp(subscriberEnd, 600, activeChannelId);
+  const animatedViews = useCountUp(viewEnd, 600, activeChannelId);
+  const animatedUploads = useCountUp(videoEnd, 600, activeChannelId);
+
   // Competitor ADD mutation with Optimistic UI updates
   const addCompMutation = useMutation<CompetitorItem, Error, string, { previous: CompetitorItem[] | undefined }>({
     mutationFn: async (youtubeId: string) => {
@@ -445,8 +583,12 @@ export default function DashboardPage() {
 
       return { previous };
     },
-    onError: (_err, _youtubeId, context) => {
+    onSuccess: (data) => {
+      showToastMessage(`Tracking started for ${data.name || "competitor"}.`);
+    },
+    onError: (err: any, _youtubeId, context) => {
       queryClient.setQueryData(["competitors"], context?.previous);
+      showToastMessage(err.message || "Failed to start tracking competitor.", "error");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["competitors"] });
@@ -470,8 +612,12 @@ export default function DashboardPage() {
 
       return { previous };
     },
-    onError: (_err, _id, context) => {
+    onSuccess: () => {
+      showToastMessage("Competitor removed successfully.");
+    },
+    onError: (err: any, _id, context) => {
       queryClient.setQueryData(["competitors"], context?.previous);
+      showToastMessage(err.message || "Failed to remove competitor.", "error");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["competitors"] });
@@ -658,8 +804,14 @@ export default function DashboardPage() {
   const chartData =
     channelData?.history?.map((video: VideoHistoryItem) => ({
       title: video.title.length > 15 ? video.title.slice(0, 15) + "..." : video.title,
+      fullTitle: video.title,
       views: parseInt(video.viewCount, 10) || 0,
       likes: parseInt(video.likeCount, 10) || 0,
+      date: new Date(video.publishedAt).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
     })).reverse() || [];
 
   if (!mounted) {
@@ -667,154 +819,116 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background text-text-primary overflow-hidden font-sans relative">
+    <div className="min-h-screen bg-background text-text-primary font-sans relative pb-12">
+      {/* Top Background Orbs */}
+      <div
+        className="absolute top-0 left-1/4 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-primary/10 to-transparent blur-[120px] pointer-events-none"
+        aria-hidden="true"
+      />
 
-      {/* DESKTOP SIDEBAR */}
-      <aside
-        className={`hidden lg:flex flex-col glass-panel border-r border-white/10 h-screen sticky top-0 transition-all duration-300 z-30 shrink-0 ${
-          isSidebarCollapsed ? "w-20" : "w-64"
-        }`}
-      >
-        <div className="flex items-center gap-3 p-6 border-b border-white/5 h-16 shrink-0 z-10">
-          <svg
-            className="h-6 w-6 text-primary shrink-0 animate-pulse"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-          >
-            <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.41 19c1.71.46 8.59.46 8.59.46s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96 29 29 0 0 0 .46-5.33 29 29 0 0 0-.46-5.33z" />
-            <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" />
-          </svg>
-          {!isSidebarCollapsed && (
-            <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-text-primary to-text-muted bg-clip-text text-transparent">
-              TubeRank
-            </span>
-          )}
-        </div>
-
-        <nav className="flex-1 p-4 overflow-y-auto relative z-10">
-          <div className="relative flex flex-col gap-2">
-            {/* Sliding Active Indicator (Fluid Flow Backplate) */}
-            <div
-              className="absolute left-0 right-0 h-[48px] bg-primary/10 border-l-[3px] border-primary rounded-r-[8px] transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] pointer-events-none z-0"
-              style={{
-                transform: `translateY(${
-                  currentView === "analytics" ? 0 : currentView === "ai-suite" ? 56 : 112
-                }px)`,
-                height: "48px",
-              }}
-            />
-            {[
-              {
-                id: "analytics",
-                name: "YouTube Analytics",
-                icon: (
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                ),
-              },
-              {
-                id: "ai-suite",
-                name: "AI Creators Suite",
-                icon: (
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                  </svg>
-                ),
-              },
-              {
-                id: "scorecard",
-                name: "Video Scorecard",
-                icon: (
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                ),
-              },
-            ].map((item) => {
-              const isActive = currentView === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setCurrentView(item.id as any)}
-                  className={`flex items-center gap-4 w-full h-[48px] px-3 rounded-button transition-all duration-300 relative z-10 focus:outline-none focus:ring-1 focus:ring-primary/50 ${
-                    isActive
-                      ? "text-text-primary font-semibold"
-                      : "text-text-muted hover:text-text-primary hover:bg-white/5"
-                  }`}
-                  title={item.name}
-                >
-                  <span className={`transition-all duration-300 ${isActive ? "text-primary scale-110" : "text-text-muted"}`}>
-                    {item.icon}
-                  </span>
-                  {!isSidebarCollapsed && <span className="text-sm truncate">{item.name}</span>}
-                </button>
-              );
-            })}
-          </div>
-        </nav>
-
-        <div className="p-4 border-t border-white/5 shrink-0 z-10">
-          <button
-            onClick={() => setIsSidebarCollapsed((prev) => !prev)}
-            className="flex items-center justify-center w-full p-2 hover:bg-white/5 text-text-muted hover:text-text-primary rounded-button transition-colors focus:outline-none focus:ring-1 focus:ring-primary"
-            aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            <svg
-              className={`h-5 w-5 transition-transform duration-300 ${
-                isSidebarCollapsed ? "rotate-180" : ""
-              }`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-        </div>
-      </aside>
-
-      {/* MAIN CONTAINER */}
-      <div className="flex-1 flex flex-col min-w-0 pb-20 md:pb-0 overflow-hidden relative">
-        
-        {/* Top Header */}
-        <header className="h-16 border-b border-white/5 bg-card/10 backdrop-blur-md py-4 px-6 md:px-10 flex justify-between items-center sticky top-0 z-20 shrink-0">
-          <div className="flex items-center gap-3">
-            <svg
-              className="h-6 w-6 text-primary md:hidden shrink-0"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-            >
-              <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.41 19c1.71.46 8.59.46 8.59.46s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96 29 29 0 0 0 .46-5.33 29 29 0 0 0-.46-5.33z" />
-              <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" />
-            </svg>
-            <h1 className="text-lg font-bold text-text-primary capitalize md:text-xl tracking-tight">
-              {currentView === "analytics"
-                ? "YouTube Analytics"
-                : currentView === "ai-suite"
-                ? "AI Creators Suite"
-                : "Video Scorecard"}
+      {/* Main Container */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 md:pt-12">
+        {/* Header section with Title & Credits */}
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-text-primary via-primary to-accent bg-clip-text text-transparent">
+              TubeRank Analytics Dashboard
             </h1>
+            <p className="text-xs md:text-sm text-text-muted mt-1 font-medium">
+              Perform keyword research, track competitors, and view channel analytics details.
+            </p>
           </div>
 
-          <div className="flex items-center gap-4">
-            {/* Credit Balance Indicator */}
+          {/* Credits & Status Badges */}
+          <div className="flex items-center gap-3 self-start md:self-center bg-white/5 border border-white/10 rounded-full px-4 py-1.5 shadow-lg backdrop-blur-md">
             {creditsData !== undefined && (
-              <span className="text-xs text-text-muted bg-white/5 border border-white/10 rounded-full px-3 py-1 font-semibold flex items-center gap-1.5">
-                <span className="inline-block w-2 h-2 rounded-full bg-primary" />
+              <span className="text-xs text-text-muted font-semibold flex items-center gap-1.5">
+                <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse" />
                 Credits: <span className="text-text-primary font-bold">{creditsData.credits}</span>
               </span>
             )}
-            <span className="hidden sm:inline-block text-xs text-text-muted bg-white/5 border border-white/10 rounded-full px-3 py-1 font-semibold">
+            <span className="h-3 w-px bg-white/10" />
+            <span className="text-xs text-text-muted font-semibold">
               Pro Member
             </span>
           </div>
-        </header>
+        </div>
+
+        {creditsData?.redisPaused && (
+          <div className="mb-6 relative overflow-hidden rounded-card border border-amber-500/20 bg-gradient-to-r from-amber-500/10 via-amber-600/5 to-transparent p-4 shadow-lg backdrop-blur-md">
+            {/* Animated glow light effect */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl pointer-events-none animate-pulse" />
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-amber-500/15 rounded-lg border border-amber-500/20 text-amber-400 shrink-0">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-5 h-5 animate-pulse"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-amber-200">AI Features Temporarily Paused</h4>
+                <p className="text-xs text-amber-300/80 mt-1 leading-relaxed max-w-3xl">
+                  Due to monthly system limits, AI Suite and Video Scorecard generation are temporarily paused. Existing analyses and other dashboard features remain fully functional. Usage limits reset at the start of next month.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Horizontal Navigation Tabs */}
+        <div className="border-b border-white/10 mb-8 relative pb-px">
+          <div className="flex gap-4 md:gap-8 overflow-x-auto no-scrollbar relative">
+            {/* Sliding border line animation (Fluid Flow) */}
+            <div
+              className="absolute bottom-0 h-0.5 bg-primary transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] hidden md:block"
+              style={{
+                left: currentView === "analytics" ? "0px" : currentView === "ai-suite" ? "176px" : "336px",
+                width: currentView === "analytics" ? "144px" : currentView === "ai-suite" ? "128px" : "128px",
+              }}
+            />
+            
+            <button
+              onClick={() => setCurrentView("analytics")}
+              className={`pb-3 text-sm font-bold transition-all duration-200 focus:outline-none shrink-0 w-36 text-left ${
+                currentView === "analytics"
+                  ? "text-text-primary border-b-2 border-primary md:border-b-0"
+                  : "text-text-muted hover:text-text-primary border-b-2 border-transparent md:border-b-0"
+              }`}
+            >
+              YouTube Analytics
+            </button>
+            <button
+              onClick={() => setCurrentView("ai-suite")}
+              className={`pb-3 text-sm font-bold transition-all duration-200 focus:outline-none shrink-0 w-32 text-left ${
+                currentView === "ai-suite"
+                  ? "text-text-primary border-b-2 border-primary md:border-b-0"
+                  : "text-text-muted hover:text-text-primary border-b-2 border-transparent md:border-b-0"
+              }`}
+            >
+              AI Creators Suite
+            </button>
+            <button
+              onClick={() => setCurrentView("scorecard")}
+              className={`pb-3 text-sm font-bold transition-all duration-200 focus:outline-none shrink-0 w-32 text-left ${
+                currentView === "scorecard"
+                  ? "text-text-primary border-b-2 border-primary md:border-b-0"
+                  : "text-text-muted hover:text-text-primary border-b-2 border-transparent md:border-b-0"
+              }`}
+            >
+              Video Scorecard
+            </button>
+          </div>
+        </div>
 
         {/* NOTIFICATION BANNERS */}
         {isOffline && (
@@ -845,8 +959,8 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Scrollable Content Pane */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-10 max-w-7xl w-full mx-auto">
+        {/* Main Content Area */}
+        <div className="pb-12">
           
           {/* ================= VIEW 1: YOUTUBE ANALYTICS ================= */}
           {currentView === "analytics" && (
@@ -870,12 +984,12 @@ export default function DashboardPage() {
                         placeholder="Search keyword suggestion..."
                         className="flex-1 glass-input rounded-button px-4 py-2.5 text-sm placeholder-text-muted transition-all duration-200"
                       />
-                      <button
+                      <PrimaryButton
                         type="submit"
-                        className="glass-button-primary text-white rounded-button px-5 py-2.5 text-sm font-semibold"
+                        className="px-5 py-2.5 text-sm"
                       >
                         Search
-                      </button>
+                      </PrimaryButton>
                     </div>
                     {validationErrors.keyword && (
                       <p className="text-xs text-error mt-1">{validationErrors.keyword}</p>
@@ -960,9 +1074,22 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-xs text-text-muted border border-dashed border-white/10 rounded-card leading-relaxed">
-                      Search a keyword to see estimated search volumes.<br />
-                      <span className="text-[10px] font-bold mt-1 block text-primary">(Costs 1 credit)</span>
+                    <div className="flex flex-col items-center justify-center text-center py-8 px-4 text-xs text-text-muted border border-dashed border-white/10 rounded-card leading-relaxed">
+                      <svg
+                        className="h-8 w-8 text-primary mb-3 opacity-80"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth="1.75"
+                        aria-hidden="true"
+                      >
+                        <circle cx="11" cy="11" r="7" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M20 20l-3-3" />
+                      </svg>
+                      <p className="font-semibold text-text-muted">
+                        Search a keyword to see estimated search volumes.
+                      </p>
+                      <span className="text-[10px] font-extrabold mt-1 block text-primary">(Costs 1 credit)</span>
                     </div>
                   )}
                 </section>
@@ -982,13 +1109,13 @@ export default function DashboardPage() {
                         placeholder="Enter YouTube Channel ID..."
                         className="flex-1 glass-input rounded-button px-4 py-2.5 text-sm placeholder-text-muted transition-all duration-200"
                       />
-                      <button
+                      <PrimaryButton
                         type="submit"
                         disabled={addCompMutation.isPending}
-                        className="bg-gradient-to-r from-accent to-rose-600 shadow-[0_4px_14px_rgba(244,63,94,0.35)] hover:brightness-110 active:scale-95 text-white rounded-button px-5 py-2.5 text-sm font-semibold transition-all duration-200 disabled:opacity-50"
+                        className="px-5 py-2.5 text-sm"
                       >
                         Track
-                      </button>
+                      </PrimaryButton>
                     </div>
                     {validationErrors.competitor && (
                       <p className="text-xs text-error mt-1">{validationErrors.competitor}</p>
@@ -1001,12 +1128,14 @@ export default function DashboardPage() {
                       <div className="h-12 bg-white/5 rounded"></div>
                       <div className="h-12 bg-white/5 rounded"></div>
                     </div>
-                  ) : competitors && competitors.length > 0 ? (
+                  ) : (competitors && competitors.length > 0) || addCompMutation.isPending ? (
                     <ul className="space-y-3">
-                      {competitors.map((comp: CompetitorItem) => (
+                      {competitors?.map((comp: CompetitorItem) => (
                         <li
                           key={comp.id}
-                          className="flex justify-between items-center bg-white/5 border border-white/10 hover:border-accent/30 rounded-card px-4 py-3 text-sm transition-colors"
+                          className={`flex justify-between items-center bg-white/5 border border-white/10 hover:border-accent/30 rounded-card px-4 py-3 text-sm transition-colors ${
+                            comp.id.toString().startsWith("temp-") ? "animate-pulse opacity-60 pointer-events-none select-none" : ""
+                          }`}
                         >
                           <div className="min-w-0 flex-1 pr-3">
                             <div className="font-semibold text-text-primary truncate">{comp.name}</div>
@@ -1014,7 +1143,7 @@ export default function DashboardPage() {
                           </div>
                           <button
                             onClick={() => removeCompMutation.mutate(comp.id)}
-                            disabled={removeCompMutation.isPending}
+                            disabled={removeCompMutation.isPending || comp.id.toString().startsWith("temp-")}
                             className="text-error hover:text-error/85 text-xs font-bold px-2 py-1 transition-colors focus:outline-none focus:underline"
                           >
                             Remove
@@ -1023,8 +1152,24 @@ export default function DashboardPage() {
                       ))}
                     </ul>
                   ) : (
-                    <div className="text-center py-8 text-xs text-text-muted border border-dashed border-white/10 rounded-card">
-                      No competitors tracked yet. Add a Channel ID above.
+                    <div className="flex flex-col items-center justify-center text-center py-8 px-4 text-xs text-text-muted border border-dashed border-white/10 rounded-card">
+                      <svg
+                        className="h-8 w-8 text-accent mb-3 opacity-80"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth="1.75"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                        />
+                      </svg>
+                      <p className="font-semibold text-text-muted">
+                        No competitors tracked yet. Add a Channel ID above.
+                      </p>
                     </div>
                   )}
                 </section>
@@ -1048,12 +1193,12 @@ export default function DashboardPage() {
                           placeholder="YouTube Channel ID..."
                           className="glass-input rounded-button px-4 py-2 text-xs placeholder-text-muted w-full md:w-56 transition-all duration-200"
                         />
-                        <button
+                        <PrimaryButton
                           type="submit"
-                          className="glass-button-primary text-white rounded-button px-4 py-2 text-xs font-semibold shrink-0"
+                          className="px-4 py-2 text-xs shrink-0"
                         >
                           Analyze
-                        </button>
+                        </PrimaryButton>
                       </div>
                       {validationErrors.channel && (
                         <p className="text-[10px] text-error mt-0.5">{validationErrors.channel}</p>
@@ -1080,14 +1225,10 @@ export default function DashboardPage() {
                       
                       {/* Banner */}
                       <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-card p-4">
-                        {channelData.channel.thumbnailUrl && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={channelData.channel.thumbnailUrl}
-                            alt={channelData.channel.title}
-                            className="w-12 h-12 rounded-full border border-white/10 object-cover shrink-0"
-                          />
-                        )}
+                        <ChannelAvatar
+                          src={channelData.channel.thumbnailUrl}
+                          title={channelData.channel.title}
+                        />
                         <div className="min-w-0 flex-1">
                           <h3 className="font-bold text-text-primary text-base truncate">{channelData.channel.title}</h3>
                           <p className="text-xs text-text-muted truncate mt-0.5">{channelData.channel.description}</p>
@@ -1099,46 +1240,55 @@ export default function DashboardPage() {
                         <div className="glass-panel rounded-card p-5 text-center shadow-lg hover:scale-[1.03] hover:border-primary/30 transition-all duration-300">
                           <div className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Subscribers</div>
                           <div className="text-2xl font-black text-primary mt-1">
-                            {parseInt(channelData.stats.subscriberCount, 10).toLocaleString()}
+                            {animatedSubscribers.toLocaleString()}
                           </div>
                         </div>
                         <div className="glass-panel rounded-card p-5 text-center shadow-lg hover:scale-[1.03] hover:border-accent/30 transition-all duration-300">
                           <div className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Total Views</div>
                           <div className="text-2xl font-black text-accent mt-1">
-                            {parseInt(channelData.stats.viewCount, 10).toLocaleString()}
+                            {animatedViews.toLocaleString()}
                           </div>
                         </div>
                         <div className="glass-panel rounded-card p-5 text-center shadow-lg hover:scale-[1.03] hover:border-white/20 transition-all duration-300">
                           <div className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Total Uploads</div>
                           <div className="text-2xl font-black text-text-primary mt-1">
-                            {parseInt(channelData.stats.videoCount, 10).toLocaleString()}
+                            {animatedUploads.toLocaleString()}
                           </div>
                         </div>
                       </div>
 
-                      {/* Recharts Line Chart */}
+                      {/* Recharts Composed Chart */}
                       <div className="glass-panel rounded-card p-6 shadow-xl">
                         <h4 className="text-xs font-bold text-text-muted mb-4 uppercase tracking-wider">
                           Recent Videos performance
                         </h4>
                         <div className="h-64">
                           <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                            <ComposedChart
+                              key={activeChannelId}
+                              data={chartData}
+                              margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                            >
+                              <defs>
+                                <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.25} />
+                                  <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
+                                </linearGradient>
+                              </defs>
                               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                               <XAxis dataKey="title" stroke="#64748b" fontSize={9} tickLine={false} />
                               <YAxis stroke="#64748b" fontSize={9} tickLine={false} />
-                              <Tooltip
-                                contentStyle={{ backgroundColor: "#111115", borderColor: "rgba(255,255,255,0.08)", borderRadius: "12px" }}
-                                labelStyle={{ color: "rgba(255,255,255,0.6)", fontWeight: "bold" }}
-                              />
-                              <Line
+                              <Tooltip content={<CustomTooltip />} />
+                              <Area
                                 type="monotone"
                                 dataKey="views"
                                 name="Views"
                                 stroke="#8B5CF6"
                                 strokeWidth={2.5}
-                                dot={{ fill: "#8B5CF6", r: 3 }}
-                                activeDot={{ r: 5 }}
+                                fill="url(#colorViews)"
+                                isAnimationActive={true}
+                                animationDuration={800}
+                                animationEasing="ease-out"
                               />
                               <Line
                                 type="monotone"
@@ -1148,8 +1298,11 @@ export default function DashboardPage() {
                                 strokeWidth={2.5}
                                 dot={{ fill: "#10B981", r: 3 }}
                                 activeDot={{ r: 5 }}
+                                isAnimationActive={true}
+                                animationDuration={800}
+                                animationEasing="ease-out"
                               />
-                            </LineChart>
+                            </ComposedChart>
                           </ResponsiveContainer>
                         </div>
                       </div>
@@ -1405,17 +1558,17 @@ export default function DashboardPage() {
                       </>
                     )}
 
-                    <button
+                    <PrimaryButton
                       type="submit"
                       disabled={aiStatus === "submitting" || aiStatus === "waiting" || aiStatus === "active"}
-                      className="w-full glass-button-primary text-white rounded-button py-2.5 text-sm font-semibold transition-all disabled:opacity-50 mt-2"
+                      className="w-full py-2.5 text-sm mt-2"
                     >
                       {aiStatus === "submitting"
                         ? "Submitting Job..."
                         : aiStatus === "waiting" || aiStatus === "active"
                         ? "Queue Active (Polling)..."
                         : "Generate with AI"}
-                    </button>
+                    </PrimaryButton>
                   </form>
                 </div>
 
@@ -1688,17 +1841,17 @@ export default function DashboardPage() {
                       placeholder="Enter YouTube Video ID (e.g. dQw4w9WgXcQ)..."
                       className="flex-1 glass-input rounded-button px-4 py-2.5 text-sm placeholder-text-muted transition-all duration-200"
                     />
-                    <button
+                    <PrimaryButton
                       type="submit"
                       disabled={scorecardStatus === "submitting" || scorecardStatus === "waiting" || scorecardStatus === "active"}
-                      className="glass-button-primary text-white font-semibold text-sm py-2.5 px-6 rounded-button transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                      className="py-2.5 px-6 text-sm shrink-0"
                     >
                       {scorecardStatus === "submitting"
                         ? "Enqueuing..."
                         : scorecardStatus === "waiting" || scorecardStatus === "active"
                         ? "Auditing..."
                         : "Audit Scorecard"}
-                    </button>
+                    </PrimaryButton>
                   </div>
                   {validationErrors.scorecard && (
                     <p className="text-xs text-error mt-1">{validationErrors.scorecard}</p>
@@ -1950,56 +2103,8 @@ export default function DashboardPage() {
 
             </div>
           )}
-
-        </main>
+        </div>
       </div>
-
-      {/* MOBILE BOTTOM NAVIGATION */}
-      <nav className="fixed bottom-0 left-0 right-0 z-30 bg-[#111115]/95 border-t border-white/5 md:hidden flex justify-around items-center py-2 px-4 shadow-xl backdrop-blur-md">
-        {[
-          {
-            id: "analytics",
-            name: "Analytics",
-            icon: (
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-            ),
-          },
-          {
-            id: "ai-suite",
-            name: "AI Tools",
-            icon: (
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-              </svg>
-            ),
-          },
-          {
-            id: "scorecard",
-            name: "Scorecard",
-            icon: (
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            ),
-          },
-        ].map((item) => {
-          const isActive = currentView === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => setCurrentView(item.id as any)}
-              className={`flex flex-col items-center gap-1 py-1 px-3 focus:outline-none ${
-                isActive ? "text-primary font-bold" : "text-text-muted"
-              }`}
-            >
-              <span>{item.icon}</span>
-              <span className="text-[9px] tracking-tight">{item.name}</span>
-            </button>
-          );
-        })}
-      </nav>
 
       {/* ================= 402 QUOTA EXCEEDED UPGRADE MODAL ================= */}
       {isQuotaModalOpen && (
@@ -2050,6 +2155,66 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Toast Notification */}
+      <div
+        role="status"
+        aria-live="polite"
+        className={`fixed top-6 right-6 z-[60] flex max-w-sm w-full items-start gap-3 rounded-[12px] bg-[#111115]/95 backdrop-blur-md p-4 shadow-2xl border transition-all duration-300 ease-out transform ${
+          toast.show
+            ? "translate-x-0 opacity-100"
+            : "translate-x-12 opacity-0 pointer-events-none"
+        } ${
+          toast.type === "error" ? "border-error/40" : "border-primary/40"
+        }`}
+      >
+        <div className={toast.type === "error" ? "text-error mt-0.5" : "text-primary mt-0.5"}>
+          {toast.type === "error" ? (
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+          ) : (
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          )}
+        </div>
+        <div className="flex-1 text-left">
+          <h3 className="text-sm font-semibold text-text-primary">
+            {toast.type === "error" ? "Error" : "Success"}
+          </h3>
+          <p className="mt-1 text-xs text-text-muted">{toast.message}</p>
+        </div>
+        <button
+          onClick={() => setToast((prev) => ({ ...prev, show: false }))}
+          className="text-[#9CA3AF] hover:text-text-primary transition-colors focus:outline-none focus:ring-1 focus:ring-gray-300 rounded"
+          aria-label="Dismiss notification"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
 
     </div>
   );

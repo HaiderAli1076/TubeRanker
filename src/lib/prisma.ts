@@ -54,7 +54,7 @@ export const prisma = basePrisma.$extends({
         const { workspaceId, userId } = store;
 
         // Skip models that are explicitly not scoped
-        const EXCLUDED_MODELS = ["User", "AuditLog", "FeatureFlag", "Workspace", "WorkspaceUser", "CreditLedger"];
+        const EXCLUDED_MODELS = ["User", "AuditLog", "FeatureFlag", "Workspace", "WorkspaceUser", "CreditLedger", "RedisUsage"];
         if (EXCLUDED_MODELS.includes(model)) {
           return query(args);
         }

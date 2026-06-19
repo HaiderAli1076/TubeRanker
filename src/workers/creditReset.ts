@@ -8,6 +8,9 @@ import { env } from "../lib/env";
 import { prisma } from "../lib/prisma";
 import { logger } from "../lib/logger";
 
+import { getCurrentRedisUsage } from "../lib/redis";
+import { setFeatureFlag } from "../lib/featureFlags";
+
 let _workerRedisConnection: Redis | null = null;
 
 function getWorkerRedisConnection(): Redis {
@@ -25,6 +28,23 @@ function getWorkerRedisConnection(): Redis {
 
 let _creditResetQueue: Queue | null = null;
 let _worker: Worker | null = null;
+
+/**
+ * Self-healing evaluator to set or clear the ai_paused_due_to_quota feature flag.
+ */
+async function evaluateQuota() {
+  try {
+    const redisUsage = await getCurrentRedisUsage();
+    await setFeatureFlag(
+      "ai_paused_due_to_quota",
+      redisUsage.paused,
+      "Automatically set based on monthly Redis command usage"
+    );
+    logger.info(`Quota evaluator set ai_paused_due_to_quota to ${redisUsage.paused} (usage: ${redisUsage.used}/${redisUsage.limit})`);
+  } catch (error) {
+    logger.error("Failed to evaluate monthly Redis usage quota in worker", { error });
+  }
+}
 
 export function startCreditResetWorkers() {
   if (_worker && _creditResetQueue) {
@@ -100,11 +120,15 @@ export function startCreditResetWorkers() {
         }
 
         logger.info(`Finished queueing resets for ${users.length} users.`);
+      } else if (job.name === "daily-quota-evaluator") {
+        logger.info("Running daily quota evaluator job...");
+        await evaluateQuota();
+        logger.info("Finished running daily quota evaluator job.");
       } else {
         throw new Error(`Unknown job name: ${job.name}`);
       }
     },
-    { connection: connection as any }
+    { connection: connection as any, stalledInterval: 300000 }
   );
   _worker = worker;
 
@@ -126,7 +150,7 @@ export function startCreditResetWorkers() {
     logger.error("BullMQ worker encountered an error", { error });
   });
 
-  // Setup repeatable/recurring cron job (monthly reset at 00:00 on the 1st of every month)
+  // Setup repeatable/recurring cron job (monthly reset and daily evaluator)
   async function setupCron() {
     try {
       // Clear existing repeatable jobs to avoid duplicates
@@ -135,7 +159,7 @@ export function startCreditResetWorkers() {
         await creditResetQueue.removeRepeatableByKey(rJob.key);
       }
 
-      // Add new repeatable cron job
+      // Add monthly credit reset repeatable job
       await creditResetQueue.add(
         "monthly-cycle-reset",
         {},
@@ -146,13 +170,25 @@ export function startCreditResetWorkers() {
         }
       );
 
-      logger.info("Successfully scheduled monthly credit reset cron job.");
+      // Add daily quota evaluator repeatable job
+      await creditResetQueue.add(
+        "daily-quota-evaluator",
+        {},
+        {
+          repeat: {
+            pattern: "0 0 * * *", // Daily at midnight
+          },
+        }
+      );
+
+      logger.info("Successfully scheduled monthly credit reset and daily quota evaluator cron jobs.");
     } catch (error) {
-      logger.error("Failed to setup monthly credit reset cron job", { error });
+      logger.error("Failed to setup repeatable cron jobs", { error });
     }
   }
 
   setupCron();
+  evaluateQuota(); // Run evaluator on worker boot to sync flag state
 
   return { worker, queue: creditResetQueue };
 }
@@ -178,3 +214,4 @@ const isMain = typeof process !== "undefined" && process.argv[1] && (
 if (isMain) {
   startCreditResetWorkers();
 }
+

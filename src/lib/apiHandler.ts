@@ -26,7 +26,12 @@ export function apiHandler<T = unknown>(handler: RouteHandler<T>): RouteHandler<
 
     return tenantStorage.run({ workspaceId, userId }, async () => {
       const origin = req.headers.get("origin") || "";
-      const isExtension = origin.startsWith("chrome-extension://");
+      const ALLOWED_EXTENSIONS = [
+        "chrome-extension://ihpcgflkfhocmfgohjlnkkjflpmpnhlh", // Main Chrome Extension ID
+      ];
+      const isExtension =
+        ALLOWED_EXTENSIONS.includes(origin) ||
+        (process.env.NODE_ENV === "development" && origin.startsWith("chrome-extension://"));
 
       // Handle preflight OPTIONS requests from extensions
       if (isExtension && req.method === "OPTIONS") {

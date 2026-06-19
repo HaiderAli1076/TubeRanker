@@ -6,7 +6,8 @@ import { rateLimit } from "@/lib/rateLimit";
 import { addAIJob } from "@/lib/ai/queue";
 import { generateCacheKey, getCachedAIResult, getIdempotentResponse, saveToIdempotency } from "@/lib/ai/cache";
 import { apiHandler } from "@/lib/apiHandler";
-import { AuthError, ValidationError } from "@/lib/errors";
+import { AuthError, ValidationError, QuotaError } from "@/lib/errors";
+import { getCurrentRedisUsage } from "@/lib/redis";
 
 export const POST = apiHandler(async (req) => {
   const session = await getServerSession(authOptions);
@@ -15,6 +16,12 @@ export const POST = apiHandler(async (req) => {
   }
 
   const userId = session.user.id;
+
+  // Check Redis command usage limits
+  const redisUsage = await getCurrentRedisUsage();
+  if (redisUsage.paused) {
+    throw new QuotaError("Scorecard generation is temporarily paused due to monthly system limits. Please try again later.");
+  }
 
   // 1. Enforce AI Rate Limiting (5/min/user)
   await rateLimit(userId, "ai");

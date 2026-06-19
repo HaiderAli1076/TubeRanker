@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { signIn } from "next-auth/react";
 
 type ButtonState = "default" | "hover" | "loading" | "error" | "success";
 
@@ -32,13 +33,20 @@ export default function LoginPage() {
 
     setCurrentState("loading");
 
-    // For testing and demo, mock the transition.
-    // If NextAuth client environment is fully configured, this will run in parallel.
-    setTimeout(() => {
-      // Simulate redirection / success
-      setCurrentState("success");
-      router.push("/dashboard");
-    }, 1500);
+    // In development mode, we bypass Google redirects by signing in with our mock credentials
+    if (process.env.NODE_ENV === "development") {
+      await signIn("credentials", {
+        callbackUrl: "/dashboard",
+        redirect: true,
+      });
+      return;
+    }
+
+    // In production, we trigger the Google OAuth flow
+    await signIn("google", {
+      callbackUrl: "/dashboard",
+      redirect: true,
+    });
   };
 
 

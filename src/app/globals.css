@@ -113,7 +113,7 @@ input, textarea, select {
 }
 .glass-panel-hover:hover {
   background: #181818;
-  border-color: rgba(124, 58, 237, 0.25);
+  border-color: rgba(255, 255, 255, 0.2);
   box-shadow: 0 12px 40px 0 rgba(124, 58, 237, 0.08);
   transform: translateY(-2px);
 }
@@ -139,10 +139,6 @@ input, textarea, select {
 .glass-button-primary:hover {
   filter: brightness(1.1);
   box-shadow: 0 6px 20px 0 rgba(124, 58, 237, 0.5);
-  transform: translateY(-1px);
-}
-.glass-button-primary:active {
-  transform: translateY(1px);
 }
 
 /* Custom Scrollbar for dashboard panels */

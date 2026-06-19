@@ -2,6 +2,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import type { AuthOptions } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { env } from "./env";
 import { prisma } from "./prisma";
 import { logger } from "./logger";
@@ -83,6 +84,36 @@ export const authOptions: AuthOptions = {
         },
       },
     }),
+    ...(process.env.NODE_ENV === "development"
+      ? [
+          CredentialsProvider({
+            name: "Mock Developer Account",
+            credentials: {},
+            async authorize() {
+              const devEmail = "developer@tuberank.com";
+              let user = await prisma.user.findUnique({
+                where: { email: devEmail },
+              });
+              if (!user) {
+                user = await prisma.user.create({
+                  data: {
+                    id: "dev-user-id",
+                    email: devEmail,
+                    name: "Developer",
+                    credits: 9999,
+                  },
+                });
+              }
+              return {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                image: user.image ?? "https://lh3.googleusercontent.com/a/default-user",
+              };
+            },
+          }),
+        ]
+      : []),
   ],
   callbacks: {
     async jwt({ token, account, user }) {
@@ -99,6 +130,10 @@ export const authOptions: AuthOptions = {
       }
 
       const extendedToken = token as ExtendedJWT;
+      if (!extendedToken.refreshToken) {
+        return token;
+      }
+
       if (Date.now() < (extendedToken.accessTokenExpires ?? 0)) {
         return token;
       }

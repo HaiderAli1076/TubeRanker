@@ -1,4 +1,4 @@
-import { getRedis } from "./redis";
+import { getRedis, incrementCommands } from "./redis";
 import { RateLimitError } from "./errors";
 import { logger } from "./logger";
 
@@ -30,6 +30,7 @@ export async function rateLimit(
     multi.pexpire(key, windowMs);
 
     const results = await multi.exec();
+    incrementCommands(6); // MULTI + zremrangebyscore + zadd + zcard + pexpire + EXEC
     if (!results) {
       throw new Error("Rate limit transaction failed");
     }
@@ -40,6 +41,7 @@ export async function rateLimit(
 
     if (count > limit) {
       // Find the oldest request in the window to calculate retry-after
+      incrementCommands(1);
       const oldestTimestamps = await getRedis().zrange(key, 0, 0, "WITHSCORES");
       let oldestTime = now - windowMs;
       if (oldestTimestamps.length >= 2) {

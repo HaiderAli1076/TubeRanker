@@ -191,3 +191,10 @@ model AuditLog {
 
   @@index([userId, createdAt])
 }
+
+model RedisUsage {
+  id        String   @id @default(cuid())
+  key       String   @unique // e.g. "monthly_commands"
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt
+}

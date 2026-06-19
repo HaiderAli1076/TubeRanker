@@ -7,7 +7,8 @@ import { addAIJob } from "./queue";
 import type { JobPriority } from "./queue";
 import { generateCacheKey, getCachedAIResult, getIdempotentResponse, saveToIdempotency } from "./cache";
 import { prisma } from "../prisma";
-import { AuthError, ValidationError } from "../errors";
+import { AuthError, ValidationError, QuotaError } from "../errors";
+import { getCurrentRedisUsage } from "../redis";
 
 /**
  * Shared API request handler for all 5 AI tools.
@@ -24,6 +25,12 @@ export async function handleAIRequest(
   }
 
   const userId = session.user.id;
+
+  // Check Redis command usage limits
+  const redisUsage = await getCurrentRedisUsage();
+  if (redisUsage.paused) {
+    throw new QuotaError("AI generation is temporarily paused due to monthly system limits. Please try again later.");
+  }
 
   // 1. Enforce AI Rate Limiting (5/min/user)
   await rateLimit(userId, "ai");

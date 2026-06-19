@@ -218,10 +218,10 @@ export function startAIWorkers(): Worker[] {
 
   const connection = getWorkerRedisConnection();
 
-  // Instantiate BullMQ Workers for all three priorities
-  const highWorker = new Worker("ai-high", processAIJob, { connection: connection as any });
-  const mediumWorker = new Worker("ai-medium", processAIJob, { connection: connection as any });
-  const lowWorker = new Worker("ai-low", processAIJob, { connection: connection as any });
+  // Instantiate BullMQ Workers for all three priorities with stalledInterval set to 5 minutes
+  const highWorker = new Worker("ai-high", processAIJob, { connection: connection as any, stalledInterval: 300000 });
+  const mediumWorker = new Worker("ai-medium", processAIJob, { connection: connection as any, stalledInterval: 300000 });
+  const lowWorker = new Worker("ai-low", processAIJob, { connection: connection as any, stalledInterval: 300000 });
 
   const workers = [highWorker, mediumWorker, lowWorker];
 
