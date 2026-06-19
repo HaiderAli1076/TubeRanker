@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { apiHandler } from "@/lib/apiHandler";
 import { getQueues } from "@/lib/ai/queue";
-import { AuthError, NotFoundError } from "@/lib/errors";
+import { AuthError, NotFoundError, ForbiddenError } from "@/lib/errors";
 
 export const GET = apiHandler<{ params: { id: string } }>(async (req, context) => {
   const session = await getServerSession(authOptions);
@@ -20,6 +20,13 @@ export const GET = apiHandler<{ params: { id: string } }>(async (req, context) =
 
   if (!job) {
     throw new NotFoundError(`Job with ID ${jobId} not found or has expired`);
+  }
+
+  // SECURITY: Verify job ownership before returning any data.
+  // BullMQ uses incrementing integer IDs, making brute-force trivial.
+  // job.data.userId is set at enqueue time in addAIJob() and is authoritative.
+  if (job.data?.userId !== session.user.id) {
+    throw new ForbiddenError("You do not have permission to access this job");
   }
 
   const state = await job.getState();

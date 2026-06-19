@@ -20,10 +20,10 @@ function safeSerialize(obj: unknown): string {
       seen.add(value);
       if (value instanceof Error) {
         return {
+          ...value,
           name: value.name,
           message: value.message,
           stack: value.stack,
-          ...value,
         };
       }
     }

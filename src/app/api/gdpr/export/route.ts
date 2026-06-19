@@ -14,12 +14,40 @@ export const GET = apiHandler(async (_req) => {
 
   const userId = session.user.id;
 
-  // Use basePrisma to retrieve all data across all workspaces/tenants for the user
+  // Use basePrisma to retrieve all data across all workspaces/tenants for the user.
+  // SECURITY: accounts and sessions are fetched with explicit select clauses that
+  // strip live OAuth tokens (access_token, refresh_token) and active session tokens
+  // from the response — these are credentials, not personal data, and must not be
+  // returned to the client even in a GDPR export.
   const user = await basePrisma.user.findUnique({
     where: { id: userId },
-    include: {
-      accounts: true,
-      sessions: true,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      emailVerified: true,
+      image: true,
+      credits: true,
+      createdAt: true,
+      updatedAt: true,
+      // OAuth accounts — provider identity info only, no live tokens
+      accounts: {
+        select: {
+          id: true,
+          provider: true,
+          providerAccountId: true,
+          type: true,
+          // access_token, refresh_token, token_type, scope, expires_at: REDACTED
+        },
+      },
+      // Active sessions — existence info only, no session tokens
+      sessions: {
+        select: {
+          id: true,
+          expires: true,
+          // sessionToken: REDACTED — returning a live session token would allow session cloning
+        },
+      },
       competitors: true,
       ledgers: true,
       auditLogs: true,
@@ -31,7 +59,9 @@ export const GET = apiHandler(async (_req) => {
     throw new AuthError("User not found");
   }
 
-  // Fetch workspaces where the user is an owner or member
+  // Fetch workspaces where the user is an owner or member.
+  // SECURITY: members list is filtered to only the requesting user's own membership
+  // row to avoid leaking other workspace members' userIds.
   const workspaces = await basePrisma.workspace.findMany({
     where: {
       OR: [
@@ -39,8 +69,20 @@ export const GET = apiHandler(async (_req) => {
         { members: { some: { userId } } },
       ],
     },
-    include: {
-      members: true,
+    select: {
+      id: true,
+      name: true,
+      ownerId: true,
+      createdAt: true,
+      updatedAt: true,
+      members: {
+        where: { userId },
+        select: {
+          id: true,
+          role: true,
+          joinedAt: true,
+        },
+      },
     },
   });
 
