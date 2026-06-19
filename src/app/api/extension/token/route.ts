@@ -6,7 +6,11 @@ import { env } from "@/lib/env";
 import { rateLimit } from "@/lib/rateLimit";
 import { RateLimitError } from "@/lib/errors";
 
-export const runtime = "edge";
+// NOTE: This route intentionally does NOT use `export const runtime = "edge"`.
+// It was previously an edge route, but edge runtime cannot import ioredis
+// (which requires Node.js built-ins: stream, crypto, dns, net).
+// Standard Node.js serverless runtime is used here instead — getToken and jose
+// both work correctly in Node.js, and rate limiting via ioredis is now available.
 
 export async function GET(req: Request) {
   // Read session token from cookies using getToken (Edge Runtime compatible)
