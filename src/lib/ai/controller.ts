@@ -9,6 +9,7 @@ import { generateCacheKey, getCachedAIResult, getIdempotentResponse, saveToIdemp
 import { prisma } from "../prisma";
 import { AuthError, ValidationError, QuotaError } from "../errors";
 import { getCurrentRedisUsage } from "../redis";
+import { processAIJobInline } from "./inline";
 
 /**
  * Shared API request handler for all 5 AI tools.
@@ -83,14 +84,14 @@ export async function handleAIRequest(
     priority = "medium";
   }
 
-  // 6. Deduct credits and queue the job
-  const jobId = await addAIJob(userId, tool, inputs, creditsCost, priority);
+  // 6. Process the AI job inline (bypasses Railway queue)
+  const result = await processAIJobInline(userId, tool, inputs, creditsCost, cacheKey);
 
   const responseBody = {
     success: true,
     data: {
-      state: "waiting",
-      jobId,
+      state: "completed",
+      result,
     },
   };
 

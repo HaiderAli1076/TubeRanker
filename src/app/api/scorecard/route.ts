@@ -8,6 +8,7 @@ import { generateCacheKey, getCachedAIResult, getIdempotentResponse, saveToIdemp
 import { apiHandler } from "@/lib/apiHandler";
 import { AuthError, ValidationError, QuotaError } from "@/lib/errors";
 import { getCurrentRedisUsage } from "@/lib/redis";
+import { processAIJobInline } from "@/lib/ai/inline";
 
 export const POST = apiHandler(async (req) => {
   const session = await getServerSession(authOptions);
@@ -69,14 +70,14 @@ export const POST = apiHandler(async (req) => {
     return NextResponse.json(responseBody);
   }
 
-  // 5. Queue the job on the Medium priority queue explicitly
-  const jobId = await addAIJob(userId, tool, inputs, creditsCost, "medium");
+  // 5. Process the AI job inline (bypasses Railway queue)
+  const result = await processAIJobInline(userId, tool, inputs, creditsCost, cacheKey);
 
   const responseBody = {
     success: true,
     data: {
-      state: "waiting",
-      jobId,
+      state: "completed",
+      result,
     },
   };
 
