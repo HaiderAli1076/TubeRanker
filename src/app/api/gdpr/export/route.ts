@@ -28,6 +28,10 @@ export const GET = apiHandler(async (_req) => {
       emailVerified: true,
       image: true,
       credits: true,
+      stripeCustomerId: true,
+      stripeSubscriptionId: true,
+      stripePriceId: true,
+      stripeCurrentPeriodEnd: true,
       createdAt: true,
       updatedAt: true,
       // OAuth accounts — provider identity info only, no live tokens
