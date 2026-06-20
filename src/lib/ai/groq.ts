@@ -22,7 +22,7 @@ export async function generateAIContent(prompt: string, systemInstruction?: stri
     const chatCompletion = await groq.chat.completions.create(
       {
         messages,
-        model: env.GROQ_MODEL || "llama-3.3-70b-specdec",
+        model: env.GROQ_MODEL || "llama-3.3-70b-versatile",
         response_format: { type: "json_object" },
       },
       { signal: controller.signal }

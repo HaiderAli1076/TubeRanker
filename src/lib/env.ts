@@ -64,7 +64,7 @@ const envSchema = z.object({
     .describe("Groq Console → API Keys"),
   GROQ_MODEL: z
     .string()
-    .default("llama-3.3-70b-specdec")
+    .default("llama-3.3-70b-versatile")
     .describe("Groq model ID"),
 
   // Resend
