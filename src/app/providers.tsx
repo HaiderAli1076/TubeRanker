@@ -6,9 +6,16 @@ import { SessionProvider, useSession } from "next-auth/react";
 import posthog from "posthog-js";
 import { env } from "../lib/env";
 
-// Initialize PostHog on client-side
-if (typeof window !== "undefined" && env.NEXT_PUBLIC_POSTHOG_KEY) {
-  posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY, {
+// Initialize PostHog on client-side if a real key is present
+const isPostHogEnabled =
+  typeof window !== "undefined" &&
+  !!env.NEXT_PUBLIC_POSTHOG_KEY &&
+  env.NEXT_PUBLIC_POSTHOG_KEY.startsWith("phc_") &&
+  env.NEXT_PUBLIC_POSTHOG_KEY.length > 30 &&
+  !env.NEXT_PUBLIC_POSTHOG_KEY.includes("Here");
+
+if (isPostHogEnabled) {
+  posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY!, {
     api_host: "https://us.i.posthog.com",
     person_profiles: "identified_only",
     autocapture: false,
@@ -26,7 +33,7 @@ function SessionTracker() {
   const { data: session, status } = useSession();
 
   useEffect(() => {
-    if (status === "authenticated" && session?.user) {
+    if (status === "authenticated" && session?.user && isPostHogEnabled) {
       const hasTracked = sessionStorage.getItem("posthog_signed_in_tracked");
       if (!hasTracked) {
         posthog.identify(session.user.id || session.user.email || undefined);
