@@ -982,7 +982,7 @@ export default function DashboardPage() {
                         onChange={(e) => setKeywordInput(e.target.value)}
                         maxLength={60}
                         placeholder="Search keyword suggestion..."
-                        className="flex-1 glass-input rounded-button px-4 py-2.5 text-sm placeholder-text-muted transition-all duration-200"
+                        className="flex-1 glass-input rounded-button px-4 py-2.5 text-base md:text-sm placeholder-text-muted transition-all duration-200"
                       />
                       <PrimaryButton
                         type="submit"
@@ -1107,7 +1107,7 @@ export default function DashboardPage() {
                         onChange={(e) => setNewCompetitorId(e.target.value)}
                         maxLength={40}
                         placeholder="Enter YouTube Channel ID..."
-                        className="flex-1 glass-input rounded-button px-4 py-2.5 text-sm placeholder-text-muted transition-all duration-200"
+                        className="flex-1 glass-input rounded-button px-4 py-2.5 text-base md:text-sm placeholder-text-muted transition-all duration-200"
                       />
                       <PrimaryButton
                         type="submit"
@@ -1191,7 +1191,7 @@ export default function DashboardPage() {
                           onChange={(e) => setChannelInput(e.target.value)}
                           maxLength={40}
                           placeholder="YouTube Channel ID..."
-                          className="glass-input rounded-button px-4 py-2 text-xs placeholder-text-muted w-full md:w-56 transition-all duration-200"
+                          className="glass-input rounded-button px-4 py-2 text-base md:text-xs placeholder-text-muted w-full md:w-56 transition-all duration-200"
                         />
                         <PrimaryButton
                           type="submit"
@@ -1414,8 +1414,8 @@ export default function DashboardPage() {
                             value={aiTopic}
                             onChange={(e) => setAiTopic(e.target.value)}
                             maxLength={100}
-                            placeholder="e.g. Building a SaaS in 24 hours"
-                            className="w-full glass-input rounded-button px-4 py-2.5 text-sm transition-all duration-200"
+                            placeholder="e.g. How to lose 10kg in 30 days"
+                            className="w-full glass-input rounded-button px-4 py-2.5 text-base md:text-sm transition-all duration-200"
                           />
                         </div>
                         <div>
@@ -1425,8 +1425,8 @@ export default function DashboardPage() {
                             value={aiKeywords}
                             onChange={(e) => setAiKeywords(e.target.value)}
                             maxLength={100}
-                            placeholder="e.g. saas, nextjs, nextauth"
-                            className="w-full glass-input rounded-button px-4 py-2.5 text-sm transition-all duration-200"
+                            placeholder="e.g. weight loss, fitness, diet"
+                            className="w-full glass-input rounded-button px-4 py-2.5 text-base md:text-sm transition-all duration-200"
                           />
                         </div>
                       </>
@@ -1442,8 +1442,8 @@ export default function DashboardPage() {
                             value={aiTitle}
                             onChange={(e) => setAiTitle(e.target.value)}
                             maxLength={100}
-                            placeholder="e.g. How I Built a SaaS in 24 Hours"
-                            className="w-full glass-input rounded-button px-4 py-2.5 text-sm transition-all duration-200"
+                            placeholder="e.g. 5 Morning Habits That Changed My Life"
+                            className="w-full glass-input rounded-button px-4 py-2.5 text-base md:text-sm transition-all duration-200"
                           />
                         </div>
                         <div>
@@ -1454,8 +1454,8 @@ export default function DashboardPage() {
                             value={aiTopic}
                             onChange={(e) => setAiTopic(e.target.value)}
                             maxLength={100}
-                            placeholder="e.g. Planning database, configuring stripe hooks, deploying to vercel..."
-                            className="w-full glass-input rounded-button px-4 py-2.5 text-sm transition-all duration-200"
+                            placeholder="e.g. Why I started, the routine breakdown, results after 30 days..."
+                            className="w-full glass-input rounded-button px-4 py-2.5 text-base md:text-sm transition-all duration-200"
                           />
                         </div>
                       </>
@@ -1472,7 +1472,7 @@ export default function DashboardPage() {
                             onChange={(e) => setAiTitle(e.target.value)}
                             maxLength={100}
                             placeholder="e.g. 10 YouTube Hacks To Grow Fast"
-                            className="w-full glass-input rounded-button px-4 py-2.5 text-sm transition-all duration-200"
+                            className="w-full glass-input rounded-button px-4 py-2.5 text-base md:text-sm transition-all duration-200"
                           />
                         </div>
                         <div>
@@ -1484,7 +1484,7 @@ export default function DashboardPage() {
                             onChange={(e) => setAiDescription(e.target.value)}
                             maxLength={500}
                             placeholder="e.g. The video goes over algorithm secrets and click rate hooks..."
-                            className="w-full glass-input rounded-button px-4 py-2.5 text-sm transition-all duration-200"
+                            className="w-full glass-input rounded-button px-4 py-2.5 text-base md:text-sm transition-all duration-200"
                           />
                         </div>
                       </>
@@ -1501,7 +1501,7 @@ export default function DashboardPage() {
                             onChange={(e) => setAiTopic(e.target.value)}
                             maxLength={100}
                             placeholder="e.g. Introduction to TypeScript Generics"
-                            className="w-full glass-input rounded-button px-4 py-2.5 text-sm transition-all duration-200"
+                            className="w-full glass-input rounded-button px-4 py-2.5 text-base md:text-sm transition-all duration-200"
                           />
                         </div>
                         <div>
@@ -1512,7 +1512,7 @@ export default function DashboardPage() {
                             onChange={(e) => setAiDuration(e.target.value)}
                             maxLength={30}
                             placeholder="e.g. 10 minutes"
-                            className="w-full glass-input rounded-button px-4 py-2.5 text-sm transition-all duration-200"
+                            className="w-full glass-input rounded-button px-4 py-2.5 text-base md:text-sm transition-all duration-200"
                           />
                         </div>
                       </>
@@ -1528,8 +1528,8 @@ export default function DashboardPage() {
                             value={aiTitle}
                             onChange={(e) => setAiTitle(e.target.value)}
                             maxLength={100}
-                            placeholder="e.g. Learn NextJS in 10 minutes"
-                            className="w-full glass-input rounded-button px-4 py-2.5 text-sm transition-all duration-200"
+                            placeholder="e.g. Easy 15-Minute Dinner Recipes"
+                            className="w-full glass-input rounded-button px-4 py-2.5 text-base md:text-sm transition-all duration-200"
                           />
                         </div>
                         <div>
@@ -1540,8 +1540,8 @@ export default function DashboardPage() {
                             value={aiDescription}
                             onChange={(e) => setAiDescription(e.target.value)}
                             maxLength={500}
-                            placeholder="e.g. In this tutorial we go over NextJS app router..."
-                            className="w-full glass-input rounded-button px-4 py-2.5 text-sm transition-all duration-200"
+                            placeholder="e.g. In this video I share three delicious 15-minute dinner recipes perfect for busy weeknights..."
+                            className="w-full glass-input rounded-button px-4 py-2.5 text-base md:text-sm transition-all duration-200"
                           />
                         </div>
                         <div>
@@ -1551,8 +1551,8 @@ export default function DashboardPage() {
                             value={aiTags}
                             onChange={(e) => setAiTags(e.target.value)}
                             maxLength={200}
-                            placeholder="e.g. nextjs, react, coding"
-                            className="w-full glass-input rounded-button px-4 py-2.5 text-sm transition-all duration-200"
+                            placeholder="e.g. cooking, recipes, quick meals"
+                            className="w-full glass-input rounded-button px-4 py-2.5 text-base md:text-sm transition-all duration-200"
                           />
                         </div>
                       </>
@@ -1839,7 +1839,7 @@ export default function DashboardPage() {
                       onChange={(e) => setScorecardVideoIdInput(e.target.value)}
                       maxLength={25}
                       placeholder="Enter YouTube Video ID (e.g. dQw4w9WgXcQ)..."
-                      className="flex-1 glass-input rounded-button px-4 py-2.5 text-sm placeholder-text-muted transition-all duration-200"
+                      className="flex-1 glass-input rounded-button px-4 py-2.5 text-base md:text-sm placeholder-text-muted transition-all duration-200"
                     />
                     <PrimaryButton
                       type="submit"
