@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { apiHandler } from "@/lib/apiHandler";
-import { deductCredits } from "@/lib/credits";
+import { deductCredits, addCredits } from "@/lib/credits";
+import { logger } from "@/lib/logger";
 import { getKeywordSuggestions } from "@/lib/youtube";
 import { prisma } from "@/lib/prisma";
 import { AuthError, ValidationError } from "@/lib/errors";
@@ -25,22 +26,36 @@ export const GET = apiHandler(async (req) => {
   // Deduct 1 credit for using the keyword tool
   await deductCredits(userId, "keyword-search", 1);
 
-  // Fetch suggestions and volume (handled with Redis caching inside)
-  const results = await getKeywordSuggestions(query);
+  try {
+    // Fetch suggestions and volume (handled with Redis caching inside)
+    const results = await getKeywordSuggestions(query);
 
-  // Record keyword search history in database
-  await prisma.keywordHistory.create({
-    data: {
-      userId,
-      keyword: query,
-      volume: results.volume || 0,
-    },
-  });
+    // Record keyword search history in database
+    await prisma.keywordHistory.create({
+      data: {
+        userId,
+        keyword: query,
+        volume: results.volume || 0,
+      },
+    });
 
-  return NextResponse.json({
-    success: true,
-    data: results,
-  });
+    return NextResponse.json({
+      success: true,
+      data: results,
+    });
+  } catch (error) {
+    try {
+      await addCredits(userId, 1, `Refund: keyword-search GET failure for ${query}`);
+      logger.info("Successfully refunded user credit upon keyword search GET failure", { userId, query });
+    } catch (refundError) {
+      logger.error("CRITICAL CREDIT REFUND FAILURE: Failed to refund user credit upon keyword search GET failure", {
+        userId,
+        query,
+        error: refundError,
+      });
+    }
+    throw error;
+  }
 });
 
 export const POST = apiHandler(async (req) => {
@@ -70,21 +85,35 @@ export const POST = apiHandler(async (req) => {
   // Deduct 1 credit for using the keyword tool
   await deductCredits(userId, "keyword-search", 1);
 
-  // Fetch suggestions and volume (handled with Redis caching inside)
-  const results = await getKeywordSuggestions(query);
+  try {
+    // Fetch suggestions and volume (handled with Redis caching inside)
+    const results = await getKeywordSuggestions(query);
 
-  // Record keyword search history in database
-  await prisma.keywordHistory.create({
-    data: {
-      userId,
-      keyword: query,
-      volume: results.volume || 0,
-    },
-  });
+    // Record keyword search history in database
+    await prisma.keywordHistory.create({
+      data: {
+        userId,
+        keyword: query,
+        volume: results.volume || 0,
+      },
+    });
 
-  return NextResponse.json({
-    success: true,
-    data: results,
-  });
+    return NextResponse.json({
+      success: true,
+      data: results,
+    });
+  } catch (error) {
+    try {
+      await addCredits(userId, 1, `Refund: keyword-search POST failure for ${query}`);
+      logger.info("Successfully refunded user credit upon keyword search POST failure", { userId, query });
+    } catch (refundError) {
+      logger.error("CRITICAL CREDIT REFUND FAILURE: Failed to refund user credit upon keyword search POST failure", {
+        userId,
+        query,
+        error: refundError,
+      });
+    }
+    throw error;
+  }
 });
 
