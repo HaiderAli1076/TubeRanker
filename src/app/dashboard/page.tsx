@@ -6,6 +6,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
+import { signOut } from "next-auth/react";
 import posthog from "posthog-js";
 import { z } from "zod";
 import { useCountUp } from "@/hooks/useCountUp";
@@ -851,6 +852,13 @@ export default function DashboardPage() {
             <span className="text-xs text-text-muted font-semibold">
               Pro Member
             </span>
+            <span className="h-3 w-px bg-white/10" />
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="text-xs font-semibold text-text-muted hover:text-red-400 transition-colors focus:outline-none"
+            >
+              Sign Out
+            </button>
           </div>
         </div>
 
