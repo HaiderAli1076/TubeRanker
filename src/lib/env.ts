@@ -46,14 +46,16 @@ const envSchema = z.object({
     .min(1)
     .describe("Google Cloud Console → APIs & Services → Credentials → API Keys"),
 
-  // Gemini AI
+  // Gemini AI (optional — production routes to Groq; gemini.ts is scaffolding only, not in production import graph)
   GEMINI_API_KEY: z
     .string()
     .min(1)
+    .optional()
     .describe("Google AI Studio (https://aistudio.google.com/) → API Keys"),
   GEMINI_MODEL: z
     .enum(["gemini-1.5-pro", "gemini-1.5-flash", "gemini-2.0-flash", "gemini-2.0-pro"])
     .default("gemini-1.5-pro")
+    .optional()
     .describe("One of: gemini-1.5-pro, gemini-1.5-flash, gemini-2.0-flash"),
 
   // Groq
@@ -67,10 +69,11 @@ const envSchema = z.object({
     .default("llama-3.3-70b-versatile")
     .describe("Groq model ID"),
 
-  // Resend
+  // Resend (optional — email sending not yet implemented; no production code path uses this key)
   RESEND_API_KEY: z
     .string()
     .startsWith("re_")
+    .optional()
     .describe("Resend Dashboard (https://resend.com) → API Keys"),
 
   // Sentry
@@ -87,10 +90,11 @@ const envSchema = z.object({
     .startsWith("phc_")
     .describe("PostHog Project Settings → Project API Key"),
 
-  // OpenTelemetry
+  // OpenTelemetry (optional — no OTEL exporter/tracer configured yet; key is validated but never read)
   OTEL_EXPORTER_OTLP_ENDPOINT: z
     .string()
     .url()
+    .optional()
     .describe("Your OTLP-compatible backend endpoint (e.g. Jaeger, Axiom, Highlight.io)"),
 });
 
