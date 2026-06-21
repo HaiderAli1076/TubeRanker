@@ -59,9 +59,10 @@ export default function LoginPage() {
       />
 
       {/* Error Toast Notification */}
-      <div
-        role="alert"
-        aria-live="assertive"
+      {showToast && (
+        <div
+          role="alert"
+          aria-live="assertive"
         className={`fixed top-6 right-6 z-50 flex max-w-sm w-full items-start gap-3 rounded-[12px] bg-card p-4 shadow-xl border border-[#EF4444] transition-all duration-300 ease-out transform ${
           showToast
             ? "translate-x-0 opacity-100"
@@ -99,6 +100,7 @@ export default function LoginPage() {
           </svg>
         </button>
       </div>
+      )}
 
       {/* Centered White Card */}
       <div
@@ -111,6 +113,8 @@ export default function LoginPage() {
         <div className="mb-[32px] flex justify-center items-center gap-[8px]">
           <svg
             className="h-6 w-6 text-primary shrink-0 play-icon-pulse"
+            width="24"
+            height="24"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
