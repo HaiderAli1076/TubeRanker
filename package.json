@@ -13,7 +13,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "worker:credit-reset": "tsx workers/creditReset.ts",
+    "worker:credit-reset": "tsx src/workers/creditReset.ts",
     "worker:ai": "tsx src/workers/aiWorker.ts"
   },
   "dependencies": {
