@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { env } from "../env";
 import { AIError } from "../errors";
 
-const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY || "");
 
 export async function generateAIContent(prompt: string, systemInstruction?: string): Promise<string> {
   if (env.GEMINI_API_KEY === "mock" || process.env.NODE_ENV === "test") {
@@ -11,7 +11,7 @@ export async function generateAIContent(prompt: string, systemInstruction?: stri
   }
 
   const model = genAI.getGenerativeModel({
-    model: env.GEMINI_MODEL,
+    model: env.GEMINI_MODEL || "gemini-1.5-pro",
     systemInstruction,
     generationConfig: {
       responseMimeType: "application/json",

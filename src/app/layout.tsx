@@ -27,7 +27,7 @@ export default function RootLayout({
         <title>{metadata.title as string}</title>
         <meta name="description" content={metadata.description as string} />
       </head>
-      <body className={inter.className}>
+      <body className={`${inter.className} overflow-x-hidden`}>
         {/* Desktop Top Navigation */}
         <TopNav />
         {/* Main content wrapper */}

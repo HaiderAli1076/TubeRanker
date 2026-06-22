@@ -26,7 +26,12 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
+.env
+.env.local
+.env.production
+.env.development
 .env*.local
+*.key
 
 # vercel
 .vercel
@@ -36,6 +41,5 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
-.env
- 
-.vercel
+
+.env*

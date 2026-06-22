@@ -95,6 +95,11 @@ export interface YoutubeChannelItem {
     videoCount: string;
     hiddenSubscriberCount: boolean;
   };
+  contentDetails?: {
+    relatedPlaylists: {
+      uploads: string;
+    };
+  };
 }
 
 export interface YoutubeVideoSearchResponse {
@@ -147,7 +152,7 @@ export async function searchVideos(query: string): Promise<unknown> {
 export async function getChannelStats(channelId: string): Promise<YoutubeChannelItem> {
   const cacheKey = CACHE_KEYS.channelStats(channelId);
   return getCachedOrFetch<YoutubeChannelItem>(cacheKey, 1, async () => {
-    const url = `${YOUTUBE_API_BASE}/channels?part=snippet,statistics&id=${channelId}&key=${env.YOUTUBE_API_KEY}`;
+    const url = `${YOUTUBE_API_BASE}/channels?part=snippet,statistics,contentDetails&id=${channelId}&key=${env.YOUTUBE_API_KEY}`;
     const response = await fetch(url);
     if (!response.ok) {
       const errorText = await response.text();
@@ -259,3 +264,54 @@ export async function getVideoDetails(videoId: string): Promise<YoutubeVideoItem
     return data.items[0] as YoutubeVideoItem;
   });
 }
+
+export interface YoutubePlaylistItem {
+  id: string;
+  snippet?: {
+    title?: string;
+    description?: string;
+    publishedAt?: string;
+    resourceId?: {
+      videoId?: string;
+    };
+  };
+}
+
+export interface YoutubePlaylistResponse {
+  items: YoutubePlaylistItem[];
+}
+
+export async function getPlaylistItems(
+  playlistId: string,
+  limit = 20
+): Promise<YoutubePlaylistResponse> {
+  const cacheKey = `yt:playlist-items:${playlistId}:${limit}`;
+  return getCachedOrFetch<YoutubePlaylistResponse>(cacheKey, 1, async () => {
+    const url = `${YOUTUBE_API_BASE}/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=${limit}&key=${env.YOUTUBE_API_KEY}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new YouTubeError(`YouTube playlistItems fetch failed: ${errorText}`);
+    }
+    return response.json() as Promise<YoutubePlaylistResponse>;
+  });
+}
+
+export async function getVideosDetailsBatch(
+  videoIds: string[]
+): Promise<{ items: YoutubeVideoItem[] }> {
+  if (videoIds.length === 0) {
+    return { items: [] };
+  }
+  const cacheKey = `yt:videos-batch:${videoIds.join(",")}`;
+  return getCachedOrFetch<{ items: YoutubeVideoItem[] }>(cacheKey, 1, async () => {
+    const url = `${YOUTUBE_API_BASE}/videos?part=snippet,statistics&id=${videoIds.join(",")}&key=${env.YOUTUBE_API_KEY}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new YouTubeError(`YouTube videos batch fetch failed: ${errorText}`);
+    }
+    return response.json() as Promise<{ items: YoutubeVideoItem[] }>;
+  });
+}
+

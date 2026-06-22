@@ -49,10 +49,9 @@ TubeRank uses **Railway** to host stateful databases and background worker tasks
   * `GEMINI_API_KEY`: Production Gemini API key
   * `GEMINI_MODEL`: `gemini-2.0-flash`
 
-### Service D: Credit Reset Cron Worker
-* **Railway Template**: Background worker or scheduled cron trigger.
+### Service D: Credit Reset Worker
+* **Railway Template**: Private Service / Background Worker (continuous process)
 * **Start Command**: `npm run worker:credit-reset`
-* **Schedule**: `0 0 1 * *` (Runs at midnight on the first day of every month)
 * **Required Environment Variables**:
   * `DATABASE_URL`: Connection string to Service A
   * `REDIS_URL`: Connection string to Service B

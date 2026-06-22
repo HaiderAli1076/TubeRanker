@@ -6,6 +6,59 @@ export function getMockAIContent(prompt: string, systemInstruction?: string): st
   const sys = (systemInstruction || "").toLowerCase();
   const p = prompt.toLowerCase();
 
+  // 0. Channel Scorecard
+  if (p.includes("channel") || sys.includes("channel")) {
+    return `\`\`\`json
+{
+  "channelId": "UCBJycsmduvYEL83R_U4JriQ",
+  "channelName": "Marques Brownlee",
+  "overallScore": 88,
+  "grade": "B",
+  "dimensions": {
+    "contentConsistency": {
+      "score": 90,
+      "label": "Excellent",
+      "insight": "Consistent upload schedule with videos published regularly every 3-4 days.",
+      "recommendation": "Maintain the current upload cadence."
+    },
+    "engagementRate": {
+      "score": 85,
+      "label": "Excellent",
+      "insight": "High engagement rate across all videos, with active comment sections and high likes-to-views ratio.",
+      "recommendation": "Encourage more discussion in pinned comments."
+    },
+    "titleSeoQuality": {
+      "score": 82,
+      "label": "Excellent",
+      "insight": "Titles are highly engaging, optimized with relevant search terms, and drive strong interest.",
+      "recommendation": "Continue testing variations of short vs long titles."
+    },
+    "thumbnailStrategy": {
+      "score": 88,
+      "label": "Excellent",
+      "insight": "Thumbnails are clean, high-contrast, and show prominent facial elements or clear focal points.",
+      "recommendation": "Maintain the clean minimalist branding."
+    },
+    "audienceGrowthVelocity": {
+      "score": 92,
+      "label": "Excellent",
+      "insight": "Strong subscriber growth relative to channel age and steady view counts.",
+      "recommendation": "Leverage community tabs to engage subscribers."
+    },
+    "nicheAuthority": {
+      "score": 95,
+      "label": "Excellent",
+      "insight": "High topic consistency across tech reviews and hardware discussions.",
+      "recommendation": "Produce series around recurring themes."
+    }
+  },
+  "topStrength": "nicheAuthority",
+  "criticalWeakness": "titleSeoQuality",
+  "generatedAt": "placeholder"
+}
+\`\`\``;
+  }
+
   // 1. Video Scorecard
   if (sys.includes("scorecard") || p.includes("scorecard")) {
     // Return specific values for Rick Astley - Never Gonna Give You Up (dQw4w9WgXcQ)

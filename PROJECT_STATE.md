@@ -32,6 +32,13 @@ Every future phase should update this document before marking work complete.
 | **Phase 6** | ✅ Complete | Chrome Extension — Manifest V3 browser extension with automated token refresh, custom CORS handlers in middleware and apiHandler, YouTube page watch overlay scorecard injections, and keyword search & AI title generation tools. Verified on 2026-06-13. |
 | **Phase 7** | ✅ Complete | Multi-Tenancy, Observability, GDPR & Polish — Multi-tenant database middleware, Sentry + PostHog integration, GDPR export/delete endpoints, cascade deletes, and clean typescript health checks. Verified on 2026-06-13. |
 
+### UI/UX Phases
+
+| Phase | Status | Notes |
+| --- | --- | --- |
+| **UI Phase 0** | ✅ Complete | Design Tokens defined in `tokens.css` and `tailwind.config.ts`. Verified on 2026-06-13. |
+| **UI Phase 1A** | ✅ Complete | Login + Onboarding Components: drift orbs, glassmorphism card, 5 Google button states, 3-step wizard, custom select dropdown, debounced search, confirmation modal with focus trap, canvas confetti. Verified on 2026-06-13. |
+
 ---
 
 ## 2. Full Prisma Schema

@@ -990,11 +990,11 @@ export default function DashboardPage() {
                         onChange={(e) => setKeywordInput(e.target.value)}
                         maxLength={60}
                         placeholder="Search keyword suggestion..."
-                        className="flex-1 glass-input rounded-button px-4 py-2.5 text-base md:text-sm placeholder-text-muted transition-all duration-200"
+                        className="flex-1 min-w-0 glass-input rounded-button px-4 py-2.5 text-base md:text-sm placeholder-text-muted transition-all duration-200"
                       />
                       <PrimaryButton
                         type="submit"
-                        className="px-5 py-2.5 text-sm"
+                        className="px-5 py-2.5 text-sm shrink-0"
                       >
                         Search
                       </PrimaryButton>
@@ -1115,12 +1115,12 @@ export default function DashboardPage() {
                         onChange={(e) => setNewCompetitorId(e.target.value)}
                         maxLength={40}
                         placeholder="Enter YouTube Channel ID..."
-                        className="flex-1 glass-input rounded-button px-4 py-2.5 text-base md:text-sm placeholder-text-muted transition-all duration-200"
+                        className="flex-1 min-w-0 glass-input rounded-button px-4 py-2.5 text-base md:text-sm placeholder-text-muted transition-all duration-200"
                       />
                       <PrimaryButton
                         type="submit"
                         disabled={addCompMutation.isPending}
-                        className="px-5 py-2.5 text-sm"
+                        className="px-5 py-2.5 text-sm shrink-0"
                       >
                         Track
                       </PrimaryButton>
@@ -1199,7 +1199,7 @@ export default function DashboardPage() {
                           onChange={(e) => setChannelInput(e.target.value)}
                           maxLength={40}
                           placeholder="YouTube Channel ID..."
-                          className="glass-input rounded-button px-4 py-2 text-base md:text-xs placeholder-text-muted w-full md:w-56 transition-all duration-200"
+                          className="min-w-0 glass-input rounded-button px-4 py-2 text-base md:text-xs placeholder-text-muted w-full md:w-56 transition-all duration-200"
                         />
                         <PrimaryButton
                           type="submit"
