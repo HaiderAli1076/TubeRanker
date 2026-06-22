@@ -1,6 +1,6 @@
 # TubeRank — AI-Powered YouTube Creator Growth Platform
 
-[![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen)](http://localhost:3000)
+[![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen)](https://tube-ranker.vercel.app)
 [![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
 [![API](https://img.shields.io/badge/API-YouTube%20%26%20Gemini-orange)](https://developers.google.com/youtube/v3)
@@ -8,7 +8,7 @@
 
 TubeRank is an AI-powered SaaS platform that helps YouTube creators grow their channels by providing keyword research, competitor analysis, video performance insights, and AI-generated content recommendations powered by Google Gemini.
 
-🌐 Live Demo: [http://localhost:3000](http://localhost:3000)
+🌐 Live Demo: [https://tube-ranker.vercel.app](https://tube-ranker.vercel.app)
 
 ---
 
